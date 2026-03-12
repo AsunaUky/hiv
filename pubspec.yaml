@@ -37,10 +37,14 @@ dependencies:
   url_launcher: ^6.3.2
 
   firebase_core: ^4.5.0 # Ядро Firebase - Инициализация Firebase в приложении
-  firebase_auth: ^6.1.4 # Авторизация пользователей (вход/регистрация)
+  firebase_auth: ^6.2.0 # Авторизация пользователей (вход/регистрация)
   cloud_firestore: ^6.1.2 # База данных Firestore — хранение данных на сервере
   firebase_storage: ^13.0.6 # Хранение файлов в облаке (фото, документы)
   google_sign_in: ^7.2.0 # Вход через Google-аккаунт
+
+  flutter_dotenv: ^6.0.0 # Чтение секретов и настроек из .env файла
+
+  equatable: ^2.0.8 # Упрощение сравнения объектов (например, состояний в BLoC)
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
