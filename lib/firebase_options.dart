@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '873071179090',
     projectId: 'hiv-app-5691f',
     storageBucket: 'hiv-app-5691f.firebasestorage.app',
+    androidClientId: '873071179090-9ob8i532vr0fqih9igjc8p8q5dcpbdo0.apps.googleusercontent.com',
+    iosClientId: '873071179090-oae95ld7ji5q6ja06sfo5d00goajl7bg.apps.googleusercontent.com',
     iosBundleId: 'com.example.hiv',
   );
 

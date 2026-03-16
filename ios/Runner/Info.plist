@@ -2,6 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+<!-- здесь добавляем разрешение на доступ к геолокации -->
+	<!-- <key>NSLocationWhenInUseUsageDescription</key>
+	<string>Мы используем вашу геолокацию для отображения вашего местоположения на карте и предоставления геолокационных функций.</string>-->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

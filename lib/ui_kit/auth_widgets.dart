@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hiv/core/constants/app_colors.dart';
+import 'package:hiv/core/theme/app_colors.dart';
 
 /// Текстовое поле с единым стилем
 class AppTextField extends StatelessWidget {
@@ -80,7 +80,7 @@ class GoogleSignInButton extends StatelessWidget {
   }
 }
 
-/// Ссылка внизу экрана: 'Текст' + кликабельный 'Ссылка'
+/// Ссылка внизу экрана: 'Текст'+кликабельный 'Ссылка'
 class AuthBottomLink extends StatelessWidget {
   const AuthBottomLink({
     super.key,

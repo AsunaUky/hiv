@@ -16,4 +16,7 @@ abstract final class AppColors {
   static const Color divider = Color(0xFFCAF0EE);
   static const Color error   = Color(0xFFB00020);
   static const Color overlay = Color(0x33000000);
+
+    /// Цвет текста/иконок на primary-фоне.
+  static const Color onPrimary = Colors.white;
 }

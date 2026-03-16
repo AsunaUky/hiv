@@ -1,19 +1,26 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:hiv/features/splash/ui/splash_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hiv/features/app/ui/app.dart';
 
 
-void main() {
-  runApp(const HivApp());
-}
 
-class HivApp extends StatelessWidget {
-  const HivApp({super.key});
+void main() async {
+  // Обязательно вызываем перед любыми async-операциями.
+  WidgetsFlutterBinding.ensureInitialized();
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
-    );
+  // Загружаем .env (если файла нет — не падаем, просто логируем).
+  try {
+    await dotenv.load();
+    // AppLogger.info('main: .env загружен');
+  } catch (_) {
+    // AppLogger.warning('main: .env файл не найден — используем значения по умолчанию');
   }
+
+  // Инициализируем Firebase.
+  await Firebase.initializeApp();
+  // AppLogger.info('main: Firebase инициализирован');
+
+  // Запускаем приложение.
+  runApp(const HivApp());
 }

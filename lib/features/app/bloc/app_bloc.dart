@@ -3,11 +3,11 @@ import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-part 'auth_event.dart';
-part 'auth_state.dart';
+part 'app_event.dart';
+part 'app_state.dart';
 
-class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(const AuthInitial()) {
+class AppBloc extends Bloc<AppEvent, AppState> {
+  AppBloc({required authRepository}) : super(const AuthInitial()) {
     on<AuthSignInRequested>(_onSignIn);
     on<AuthRegisterRequested>(_onRegister);
     on<AuthGuestRequested>(_onGuest);
@@ -20,7 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   // Вход по email/пароль
   Future<void> _onSignIn(
     AuthSignInRequested event,
-    Emitter<AuthState> emit,
+    Emitter<AppState> emit,
   ) async {
     emit(const AuthLoading());
     try {
@@ -37,7 +37,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   // Регистрация
   Future<void> _onRegister(
     AuthRegisterRequested event,
-    Emitter<AuthState> emit,
+    Emitter<AppState> emit,
   ) async {
     emit(const AuthLoading());
     try {
@@ -55,7 +55,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   // Гость
   Future<void> _onGuest(
     AuthGuestRequested event,
-    Emitter<AuthState> emit,
+    Emitter<AppState> emit,
   ) async {
     emit(const AuthLoading());
     try {
@@ -69,7 +69,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   // Google (google_sign_in ^7.x)
   Future<void> _onGoogle(
   AuthGoogleRequested event,
-  Emitter<AuthState> emit,
+  Emitter<AppState> emit,
 ) async {
   emit(const AuthLoading());
   try {
@@ -92,7 +92,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onSignOut(
     AuthSignOutRequested event,
-    Emitter<AuthState> emit,
+    Emitter<AppState> emit,
   ) async {
     await _auth.signOut();
     emit(const AuthInitial());

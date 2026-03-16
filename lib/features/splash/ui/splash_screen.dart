@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/core/constants/app_colors.dart';
+import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/router/route_names.dart';
 
 class SplashScreen extends StatefulWidget {

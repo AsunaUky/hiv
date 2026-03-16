@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- сюда добавляем разрешение на доступ к геолокации -->
+   
+
     <application
         android:label="hiv"
         android:name="${applicationName}"

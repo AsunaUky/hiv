@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/core/constants/app_colors.dart';
-import 'package:hiv/features/app/bloc/auth_bloc.dart';
+import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/ui_kit/auth_widgets.dart';
 import 'package:hiv/core/router/route_names.dart';
 
@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    context.read<AuthBloc>().add(AuthSignInRequested(
+    context.read<AppBloc>().add(AuthSignInRequested(
       email:    _emailCtrl.text,
       password: _passCtrl.text,
     ));
@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
+    return BlocListener<AppBloc, AppState>(
       listener: (context, state) {
         if (state is AuthSuccess) context.go(RouteNames.main);
         if (state is AuthFailure) {
@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 28),
 
                   // Войти
-                  BlocBuilder<AuthBloc, AuthState>(
+                  BlocBuilder<AppBloc, AppState>(
                     builder: (_, state) => ElevatedButton(
                       onPressed: state is AuthLoading ? null : _submit,
                       child: state is AuthLoading
@@ -103,23 +103,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 14),
 
                   // Google
-                  BlocBuilder<AuthBloc, AuthState>(
+                  BlocBuilder<AppBloc, AppState>(
                     builder: (context, state) => GoogleSignInButton(
                       loading: state is AuthLoading,
                       onTap: () => context
-                          .read<AuthBloc>()
+                          .read<AppBloc>()
                           .add(const AuthGoogleRequested()),
                     ),
                   ),
                   const SizedBox(height: 14),
 
                   // Гость
-                  BlocBuilder<AuthBloc, AuthState>(
+                  BlocBuilder<AppBloc, AppState>(
                     builder: (context, state) => TextButton(
                       onPressed: state is AuthLoading
                           ? null
                           : () => context
-                              .read<AuthBloc>()
+                              .read<AppBloc>()
                               .add(const AuthGuestRequested()),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

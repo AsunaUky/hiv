@@ -1,13 +1,13 @@
 // ignore_for_file: always_use_package_imports
-part of 'auth_bloc.dart';
+part of 'app_bloc.dart';
 
-sealed class AuthEvent extends Equatable {
-  const AuthEvent();
+sealed class AppEvent extends Equatable {
+  const AppEvent();
   @override
   List<Object> get props => [];
 }
 
-final class AuthSignInRequested extends AuthEvent {
+final class AuthSignInRequested extends AppEvent {
   const AuthSignInRequested({required this.email, required this.password});
   final String email;
   final String password;
@@ -15,7 +15,7 @@ final class AuthSignInRequested extends AuthEvent {
   List<Object> get props => [email, password];
 }
 
-final class AuthRegisterRequested extends AuthEvent {
+final class AuthRegisterRequested extends AppEvent {
   const AuthRegisterRequested({
     required this.name,
     required this.email,
@@ -28,6 +28,6 @@ final class AuthRegisterRequested extends AuthEvent {
   List<Object> get props => [name, email, password];
 }
 
-final class AuthGuestRequested   extends AuthEvent { const AuthGuestRequested(); }
-final class AuthGoogleRequested  extends AuthEvent { const AuthGoogleRequested(); }
-final class AuthSignOutRequested extends AuthEvent { const AuthSignOutRequested(); }
+final class AuthGuestRequested   extends AppEvent { const AuthGuestRequested(); }
+final class AuthGoogleRequested  extends AppEvent { const AuthGoogleRequested(); }
+final class AuthSignOutRequested extends AppEvent { const AuthSignOutRequested(); }
