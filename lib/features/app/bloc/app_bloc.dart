@@ -105,6 +105,6 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         'invalid-email'          => 'Некорректный email',
         'weak-password'          => 'Слишком простой пароль',
         'network-request-failed' => 'Нет подключения',
-        _                        => 'Ошибка: $code', // ← покажет реальный код
+        _                        => 'Ошибка: $code',
       };
 }

@@ -1,15 +1,18 @@
 # hiv
 
+Требования: 
 Версия Flutter 3.41.3
-Dart версии: 3.3.0
+Dart версии: 3.11.1
 VS Code/Android Studio
 
 Описание для запуска: 
 
-Создайте файл .env в корне проекта
+Создайте файл .env в корне проекта: API_URL=https://hiv-app-5691f-default-rtdb.firebaseio.com
+
 Добавьте файл google-services.json в папку: android/app/
 
-Клонировать репозиторий: git clone <ссылка>
+Клонировать репозиторий: git clone <https://github.com/AsunaUky/hiv.git>
+Перейти в папку проекта: cd_hiv
 Установить зависимости: flutter pub get
 Запустить проект: flutter run
 
