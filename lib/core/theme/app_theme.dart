@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/core/theme/app_text_styles.dart';
 
 /// Тема приложения (пока только светлая).
 ///
@@ -36,8 +37,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          // foregroundColor: AppColors.onPrimary,
-          // textStyle: AppTextStyles.button,
+          foregroundColor: AppColors.onPrimary, // ← раскомментируй эту строку
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -46,13 +46,13 @@ class AppTheme {
       ),
 
       // ── Текстовая тема ───────────────────────────────────────
-      // textTheme: const TextTheme(
-      //   headlineLarge: AppTextStyles.headlineLarge,
-      //   headlineMedium: AppTextStyles.headlineMedium,
-      //   bodyLarge: AppTextStyles.bodyLarge,
-      //   bodySmall: AppTextStyles.bodySmall,
-      //   labelSmall: AppTextStyles.label,
-      // ),
+      textTheme: const TextTheme(
+        headlineLarge: AppTextStyles.headlineLarge,
+        headlineMedium: AppTextStyles.headlineMedium,
+        bodyLarge: AppTextStyles.bodyLarge,
+        bodySmall: AppTextStyles.bodySmall,
+        labelSmall: AppTextStyles.label,
+      ),
 
       // ── Навигация ────────────────────────────────────────────
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(

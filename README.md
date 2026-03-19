@@ -1,5 +1,8 @@
 # hiv
 
+Версия Flutter 3.41.3
+Описание для запуска: 
+
 A new Flutter project.
 
 ## Getting Started
