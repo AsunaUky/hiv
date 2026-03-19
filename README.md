@@ -1,9 +1,17 @@
 # hiv
 
 Версия Flutter 3.41.3
+Dart версии: 3.3.0
+VS Code/Android Studio
+
 Описание для запуска: 
-dotenv
-google-services.json
+
+Создайте файл .env в корне проекта
+Добавьте файл google-services.json в папку: android/app/
+
+Клонировать репозиторий: git clone <ссылка>
+Установить зависимости: flutter pub get
+Запустить проект: flutter run
 
 ## Getting Started
 

@@ -44,7 +44,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AppBloc, AppState>(
       listener: (context, state) {
-        if (state is AuthSuccess) context.go(RouteNames.home);
+        if (state is AuthSuccess) context.go(RouteNames.main);
         if (state is AuthFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

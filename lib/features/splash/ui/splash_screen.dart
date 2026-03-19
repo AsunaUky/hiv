@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
     // Проверка авторизации → home или login
     final user = FirebaseAuth.instance.currentUser;
-    context.go(user != null ? RouteNames.home : RouteNames.login);
+    context.go(user != null ? RouteNames.main : RouteNames.login);
   }
 
   @override
