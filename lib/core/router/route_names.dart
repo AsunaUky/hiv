@@ -1,4 +1,3 @@
-/// Все маршруты приложения в одном месте.
 abstract final class RouteNames {
   // ── Пути ──────────────────────────────────────────────────────
   static const splash      = '/';
@@ -6,8 +5,9 @@ abstract final class RouteNames {
   static const register    = '/register';
   static const home        = '/home';
   static const main        = '/home/main';
+  static const test        = '/test';  // или /home/test
+  static const info        = '/home/info';
   static const profile     = '/home/profile';
-  static const test        = '/test';
   static const testResult  = '/test-result';
   static const infoArticle = '/info/article';
   static const editProfile = '/edit-profile';
@@ -17,8 +17,9 @@ abstract final class RouteNames {
   static const loginName       = 'login';
   static const registerName    = 'register';
   static const mainName        = 'main';
-  static const profileName     = 'profile';
   static const testName        = 'test';
+  static const infoName        = 'info';
+  static const profileName     = 'profile';
   static const testResultName  = 'testResult';
   static const infoArticleName = 'infoArticle';
   static const editProfileName = 'editProfile';

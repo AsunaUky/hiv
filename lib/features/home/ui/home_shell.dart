@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
+import 'package:hiv/core/theme/app_colors.dart';
 
-// TODO-комментарий в коде для обозначения задач, которые нужно реализовать или доделать позже
-// TODO: заменить на полноценный HomeShell с BottomNavigationBar
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.child});
 
@@ -15,12 +14,21 @@ class HomeShell extends StatelessWidget {
       body: child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex(context),
-        onTap: (i) => i == 0
-            ? context.go(RouteNames.main)
-            : context.go(RouteNames.profile),
+        onTap: (i) => switch (i) {
+          0 => context.go(RouteNames.main),
+          1 => context.go(RouteNames.test),
+          2 => context.go(RouteNames.info),
+          _ => context.go(RouteNames.profile),
+        },
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textHint,
+        backgroundColor: AppColors.surface,
+        type: BottomNavigationBarType.fixed, // нужен при 4+ вкладках
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined),    label: 'Главная'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outlined),  label: 'Профиль'),
+          BottomNavigationBarItem(icon: Icon(Icons.map_outlined),       label: 'Карта'),
+          BottomNavigationBarItem(icon: Icon(Icons.quiz_outlined),      label: 'Тест'),
+          BottomNavigationBarItem(icon: Icon(Icons.info_outline),       label: 'Информация'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outlined),    label: 'Профиль'),
         ],
       ),
     );
@@ -28,7 +36,9 @@ class HomeShell extends StatelessWidget {
 
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith(RouteNames.profile)) return 1;
+    if (location.startsWith(RouteNames.test))    return 1;
+    if (location.startsWith(RouteNames.info))    return 2;
+    if (location.startsWith(RouteNames.profile)) return 3;
     return 0;
   }
 }
