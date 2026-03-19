@@ -2,8 +2,8 @@
 
 Версия Flutter 3.41.3
 Описание для запуска: 
-
-A new Flutter project.
+dotenv
+google-services.json
 
 ## Getting Started
 
