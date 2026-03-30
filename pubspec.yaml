@@ -35,6 +35,7 @@ dependencies:
   go_router: ^17.1.0
   image_picker: ^1.2.1
   url_launcher: ^6.3.2
+  very_good_analysis: ^10.2.0 # Набор правил для статического анализа кода (линтер) от Very Good Ventures
 
   firebase_core: ^4.5.0 # Ядро Firebase - Инициализация Firebase в приложении
   firebase_auth: ^6.2.0 # Авторизация пользователей (вход/регистрация)
@@ -49,6 +50,10 @@ dependencies:
 
   permission_handler: ^12.0.1 # Управление разрешениями в приложении
   geolocator: ^14.0.2 # Получение геолокации пользователя
+
+  flutter_native_splash: ^2.4.7 # Экран загрузки при запуске приложения  
+  flutter_launcher_icons: ^0.14.4 # Генерация иконки приложения для Android и iOS
+  shared_preferences: ^2.5.5 # Локальное хранение данных (например, настройки пользователя)
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

@@ -2,8 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiv/features/app/ui/app.dart';
-
-
+import 'package:hiv/firebase_options.dart';
 
 void main() async {
   // Обязательно вызываем перед любыми async-операциями.
@@ -18,7 +17,7 @@ void main() async {
   }
 
   // Инициализируем Firebase.
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // AppLogger.info('main: Firebase инициализирован');
 
   // Запускаем приложение.

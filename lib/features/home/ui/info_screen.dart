@@ -7,6 +7,7 @@ class InfoScreen extends StatelessWidget {
     required this.title,
     required this.content,
   });
+  
 
   final String title;
   final String content;

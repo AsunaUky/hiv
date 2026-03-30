@@ -68,33 +68,39 @@ class AppBloc extends Bloc<AppEvent, AppState> {
 
   // Google (google_sign_in ^7.x)
   Future<void> _onGoogle(
-  AuthGoogleRequested event,
-  Emitter<AppState> emit,
-) async {
-  emit(const AuthLoading());
-  try {
-    final googleUser = await GoogleSignIn.instance.authenticate();
-
-    // authentication — синхронный в v7
-    final googleAuth = googleUser.authentication;
-
-    final credential = GoogleAuthProvider.credential(
-      idToken: googleAuth.idToken,
-    );
-    await _auth.signInWithCredential(credential);
-    emit(const AuthSuccess());
-  } on FirebaseAuthException catch (e) {
-    emit(AuthFailure(_mapError(e.code)));
-  } catch (_) {
-    emit(const AuthInitial());
+    AuthGoogleRequested event,
+    Emitter<AppState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      final googleUser = await GoogleSignIn.instance.authenticate();
+      final googleAuth = googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+      await _auth.signInWithCredential(credential);
+      emit(const AuthSuccess());
+    } on FirebaseAuthException catch (e) {
+      emit(AuthFailure(_mapError(e.code)));
+    } catch (_) {
+      emit(const AuthInitial());
+    }
   }
-}
 
+  // Выход — сбрасываем и Firebase и Google сессию
   Future<void> _onSignOut(
     AuthSignOutRequested event,
     Emitter<AppState> emit,
   ) async {
-    await _auth.signOut();
+    try {
+      await Future.wait([
+        _auth.signOut(),
+        GoogleSignIn.instance.signOut(),
+      ]);
+    } catch (_) {
+      // Google мог не быть авторизован — игнорируем
+      await _auth.signOut();
+    }
     emit(const AuthInitial());
   }
 
