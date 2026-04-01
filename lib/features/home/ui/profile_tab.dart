@@ -22,7 +22,6 @@ class _ProfileTabState extends State<ProfileTab> {
   @override
   void initState() {
     super.initState();
-    // Загружаем сохранённый язык
     LanguageService.load().then((val) {
       if (mounted) setState(() => _isKazakh = val);
     });
@@ -32,8 +31,11 @@ class _ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     return BlocListener<AppBloc, AppState>(
       listener: (context, state) {
-        // Переход на логин при выходе
-        if (state is AuthInitial) context.go(RouteNames.login);
+        if (state is AuthInitial) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) context.go(RouteNames.login);
+          });
+        }
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -42,48 +44,38 @@ class _ProfileTabState extends State<ProfileTab> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               const SizedBox(height: 32),
-
               _ProfileHeader(user: _user),
-
               const SizedBox(height: 32),
 
-              // Язык
               _SectionLabel(label: _isKazakh ? 'Тіл' : 'Язык'),
               _LanguageTile(
                 isKazakh: _isKazakh,
                 onChanged: (val) {
                   setState(() => _isKazakh = val);
-                  LanguageService.save(val); // сохраняем выбор
+                  LanguageService.save(val);
                 },
               ),
-
               const SizedBox(height: 16),
 
-              // Аккаунт
-              _SectionLabel(label: _isKazakh ? 'Аккаунт' : 'Аккаунт'),
+              _SectionLabel(label: 'Аккаунт'),
               _MenuTile(
                 icon: Icons.edit_outlined,
                 label: _isKazakh ? 'Профильді өзгерту' : 'Редактировать профиль',
                 onTap: () => context.push(RouteNames.editProfile),
               ),
-
               const Divider(color: AppColors.divider, height: 1),
-
               _MenuTile(
                 icon: Icons.logout_rounded,
                 label: _isKazakh ? 'Шығу' : 'Выйти',
                 onTap: () => _confirmSignOut(context),
               ),
-
               const Divider(color: AppColors.divider, height: 1),
-
               _MenuTile(
                 icon: Icons.delete_outline_rounded,
                 label: _isKazakh ? 'Аккаунтты жою' : 'Удалить аккаунт',
                 color: AppColors.error,
                 onTap: () => _confirmDelete(context),
               ),
-
               const SizedBox(height: 32),
             ],
           ),
@@ -95,20 +87,25 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _confirmSignOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
         title: Text(_isKazakh ? 'Шығу' : 'Выйти'),
-        content: Text(_isKazakh
-            ? 'Аккаунттан шыққыңыз келе ме?'
-            : 'Вы уверены, что хотите выйти?'),
+        content: Text(
+          _isKazakh
+              ? 'Аккаунттан шыққыңыз келе ме?'
+              : 'Вы уверены, что хотите выйти?',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(_isKazakh ? 'Болдырмау' : 'Отмена'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(_isKazakh ? 'Шығу' : 'Выйти',
-                style: const TextStyle(color: AppColors.error)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              _isKazakh ? 'Шығу' : 'Выйти',
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -121,20 +118,25 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
         title: Text(_isKazakh ? 'Аккаунтты жою' : 'Удалить аккаунт'),
-        content: Text(_isKazakh
-            ? 'Бұл әрекетті кері қайтару мүмкін емес.'
-            : 'Это действие необратимо. Все данные будут удалены.'),
+        content: Text(
+          _isKazakh
+              ? 'Бұл әрекетті кері қайтару мүмкін емес.'
+              : 'Это действие необратимо. Все данные будут удалены.',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(_isKazakh ? 'Болдырмау' : 'Отмена'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(_isKazakh ? 'Жою' : 'Удалить',
-                style: const TextStyle(color: AppColors.error)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              _isKazakh ? 'Жою' : 'Удалить',
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -149,9 +151,11 @@ class _ProfileTabState extends State<ProfileTab> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(_isKazakh
-                  ? 'Қайта кіру қажет. Шығып, қайта кіріңіз.'
-                  : 'Требуется повторный вход. Выйдите и войдите снова.'),
+              content: Text(
+                _isKazakh
+                    ? 'Қайта кіру қажет. Шығып, қайта кіріңіз.'
+                    : 'Требуется повторный вход. Выйдите и войдите снова.',
+              ),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
@@ -253,8 +257,11 @@ class _MenuTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: c, size: 22),
       title: Text(label, style: TextStyle(color: c, fontSize: 15)),
-      trailing: const Icon(Icons.chevron_right_rounded,
-          color: AppColors.textHint, size: 20),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textHint,
+        size: 20,
+      ),
       onTap: onTap,
     );
   }

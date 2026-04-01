@@ -35,6 +35,7 @@ dependencies:
   go_router: ^17.1.0
   image_picker: ^1.2.1
   url_launcher: ^6.3.2
+  # intl: ^0.20.2 # Международные стандарты и локализация (например, форматирование дат и чисел)
   very_good_analysis: ^10.2.0 # Набор правил для статического анализа кода (линтер) от Very Good Ventures
 
   firebase_core: ^4.5.0 # Ядро Firebase - Инициализация Firebase в приложении
@@ -43,6 +44,8 @@ dependencies:
   firebase_storage: ^13.0.6 # Хранение файлов в облаке (фото, документы)
   google_sign_in: ^7.2.0 # Вход через Google-аккаунт
   logger: ^2.7.0 # Логирование для отладки и мониторинга приложения
+  firebase_messaging: ^16.1.3 # Push-уведомления через Firebase Cloud Messaging (FCM)
+  # flutter_local_notifications: ^21.0.0 # Локальные уведомления в приложении (например, напоминания во вреям использования приложения)
 
   flutter_dotenv: ^6.0.0 # Чтение секретов и настроек из .env файла
 
@@ -54,6 +57,9 @@ dependencies:
   flutter_native_splash: ^2.4.7 # Экран загрузки при запуске приложения  
   flutter_launcher_icons: ^0.14.4 # Генерация иконки приложения для Android и iOS
   shared_preferences: ^2.5.5 # Локальное хранение данных (например, настройки пользователя)
+  flutter_secure_storage: ^10.0.0 # Безопасное хранение данных (например, токены авторизации, 
+                                  # их нельзя же хранить в shared_preferences, так что надо создать отдельный файл для работы с secure_storage)
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
