@@ -31,3 +31,4 @@ final class AuthRegisterRequested extends AppEvent {
 final class AuthGuestRequested   extends AppEvent { const AuthGuestRequested(); }
 final class AuthGoogleRequested  extends AppEvent { const AuthGoogleRequested(); }
 final class AuthSignOutRequested extends AppEvent { const AuthSignOutRequested(); }
+final class AuthDeleteRequested  extends AppEvent { const AuthDeleteRequested(); }

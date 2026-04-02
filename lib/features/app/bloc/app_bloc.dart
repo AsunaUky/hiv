@@ -2,19 +2,24 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hiv/data/repositories/auth_repository.dart';
 
 part 'app_event.dart';
 part 'app_state.dart';
 
 class AppBloc extends Bloc<AppEvent, AppState> {
-  AppBloc({required authRepository}) : super(const AuthInitial()) {
+  AppBloc({required AuthRepository authRepository})
+      : _authRepository = authRepository,
+        super(const AuthInitial()) {
     on<AuthSignInRequested>(_onSignIn);
     on<AuthRegisterRequested>(_onRegister);
     on<AuthGuestRequested>(_onGuest);
     on<AuthGoogleRequested>(_onGoogle);
     on<AuthSignOutRequested>(_onSignOut);
+    on<AuthDeleteRequested>(_onDelete);
   }
 
+  final AuthRepository _authRepository;
   final _auth = FirebaseAuth.instance;
 
   // Вход по email/пароль
@@ -75,9 +80,7 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     try {
       final googleUser = await GoogleSignIn.instance.authenticate();
       final googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
       await _auth.signInWithCredential(credential);
       emit(const AuthSuccess());
     } on FirebaseAuthException catch (e) {
@@ -87,21 +90,39 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     }
   }
 
-  // Выход — сбрасываем и Firebase и Google сессию
+  // Выход — через репозиторий (Firebase + Google)
   Future<void> _onSignOut(
     AuthSignOutRequested event,
     Emitter<AppState> emit,
   ) async {
     try {
-      await Future.wait([
-        _auth.signOut(),
-        GoogleSignIn.instance.signOut(),
-      ]);
+      await _authRepository.signOut();
     } catch (_) {
-      // Google мог не быть авторизован — игнорируем
-      await _auth.signOut();
+      // Даже если ошибка — всё равно сбрасываем состояние
     }
     emit(const AuthInitial());
+  }
+
+  // Удаление аккаунта — через репозиторий
+  Future<void> _onDelete(
+    AuthDeleteRequested event,
+    Emitter<AppState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      await _authRepository.deleteAccount();
+      emit(const AuthInitial());
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        emit(const AuthDeleteFailure(
+          'Требуется повторный вход. Выйдите и войдите снова.',
+        ));
+      } else {
+        emit(AuthFailure(_mapError(e.code)));
+      }
+    } catch (_) {
+      emit(const AuthFailure('Не удалось удалить аккаунт. Попробуйте снова.'));
+    }
   }
 
   String _mapError(String code) => switch (code) {

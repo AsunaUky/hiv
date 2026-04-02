@@ -31,10 +31,33 @@ class _ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     return BlocListener<AppBloc, AppState>(
       listener: (context, state) {
+        // Выход или удаление — идём на логин
         if (state is AuthInitial) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) context.go(RouteNames.login);
           });
+        }
+
+        // Ошибка удаления — требуется повторный вход
+        if (state is AuthDeleteFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+
+        // Общая ошибка
+        if (state is AuthFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       },
       child: Scaffold(
@@ -111,6 +134,7 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
     );
     if (confirmed == true && context.mounted) {
+      // Через BLoC → AuthRepository → FirebaseAuthService (Firebase + Google)
       context.read<AppBloc>().add(const AuthSignOutRequested());
     }
   }
@@ -142,26 +166,8 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
     );
     if (confirmed == true && context.mounted) {
-      try {
-        await _user?.delete();
-        if (context.mounted) {
-          context.read<AppBloc>().add(const AuthSignOutRequested());
-        }
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                _isKazakh
-                    ? 'Қайта кіру қажет. Шығып, қайта кіріңіз.'
-                    : 'Требуется повторный вход. Выйдите и войдите снова.',
-              ),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
+      // Через BLoC → AuthRepository → FirebaseAuthService
+      context.read<AppBloc>().add(const AuthDeleteRequested());
     }
   }
 }
