@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/ui_kit/auth_widgets.dart';
-import 'package:hiv/core/router/route_names.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -56,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch, // растягиваем по ширине
                 children: [
                   const SizedBox(height: 48),
                   _AuthHeader(title: 'Вход', subtitle: 'Добро пожаловать'),
@@ -68,11 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hint: 'Email',
                     prefixIcon: Icons.mail_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Введите email';
-                      if (!v.contains('@')) return 'Некорректный email';
-                      return null;
-                    },
+                    validator: AppValidators.email,
                   ),
                   const SizedBox(height: 14),
 
@@ -86,8 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscure: _obscure,
                       onTap: () => setState(() => _obscure = !_obscure),
                     ),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'Минимум 6 символов' : null,
+                    validator: AppValidators.password,
                   ),
                   const SizedBox(height: 28),
 
@@ -100,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('Войти'),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
 
                   // Google
                   BlocBuilder<AppBloc, AppState>(
@@ -111,32 +107,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           .add(const AuthGoogleRequested()),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
 
                   // Гость
                   BlocBuilder<AppBloc, AppState>(
-                    builder: (context, state) => TextButton(
+                    builder: (context, state) => OutlinedButton.icon(
                       onPressed: state is AuthLoading
                           ? null
                           : () => context
                               .read<AppBloc>()
                               .add(const AuthGuestRequested()),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.person_outline_rounded,
-                              size: 18, color: AppColors.textSecondary),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Войти как гость',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                      icon: const Icon(Icons.person_outline_rounded, size: 18),
+                      label: const Text('Войти как гость'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: AppColors.divider),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -158,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Общие виджеты для auth-экранов
+// ─── Вспомогательные виджеты ─────────────────────────────────────
 
 class _AuthHeader extends StatelessWidget {
   const _AuthHeader({required this.title, required this.subtitle});

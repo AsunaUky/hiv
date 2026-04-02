@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/router/route_names.dart';
+import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/ui_kit/auth_widgets.dart';
 
@@ -62,12 +63,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch, // растягиваем по ширине
                 children: [
                   const SizedBox(height: 48),
-
                   _RegHeader(),
-
                   const SizedBox(height: 36),
 
                   // Имя
@@ -75,8 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _nameCtrl,
                     hint: 'Ваше имя',
                     prefixIcon: Icons.person_outline_rounded,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Введите имя' : null,
+                    validator: AppValidators.name,
                   ),
                   const SizedBox(height: 14),
 
@@ -86,11 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Email',
                     prefixIcon: Icons.mail_outline_rounded,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Введите email';
-                      if (!v.contains('@')) return 'Некорректный email';
-                      return null;
-                    },
+                    validator: AppValidators.email,
                   ),
                   const SizedBox(height: 14),
 
@@ -104,8 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscure: _obscure,
                       onTap: () => setState(() => _obscure = !_obscure),
                     ),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'Минимум 6 символов' : null,
+                    validator: AppValidators.password,
                   ),
                   const SizedBox(height: 14),
 
@@ -120,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onTap: () => setState(() => _obscure2 = !_obscure2),
                     ),
                     validator: (v) =>
-                        v != _passCtrl.text ? 'Пароли не совпадают' : null,
+                        AppValidators.confirmPassword(v, _passCtrl.text),
                   ),
                   const SizedBox(height: 28),
 
@@ -151,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// ─── Вспомогательные ─────────────────────────────────────────────
+// ─── Вспомогательные виджеты ─────────────────────────────────────
 
 class _RegHeader extends StatelessWidget {
   @override

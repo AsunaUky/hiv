@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hiv/data/repositories/auth_repository.dart';
 
 part 'app_event.dart';
@@ -57,7 +56,7 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     }
   }
 
-  // Гость
+  // Гость — анонимный вход через Firebase
   Future<void> _onGuest(
     AuthGuestRequested event,
     Emitter<AppState> emit,
@@ -68,25 +67,29 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       emit(const AuthSuccess());
     } on FirebaseAuthException catch (e) {
       emit(AuthFailure(_mapError(e.code)));
+    } catch (e) {
+      emit(AuthFailure('Ошибка входа как гость: $e'));
     }
   }
 
-  // Google (google_sign_in ^7.x)
+  // Google — через AuthRepository → FirebaseAuthService (event-based v7 API)
   Future<void> _onGoogle(
     AuthGoogleRequested event,
     Emitter<AppState> emit,
   ) async {
     emit(const AuthLoading());
     try {
-      final googleUser = await GoogleSignIn.instance.authenticate();
-      final googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
-      await _auth.signInWithCredential(credential);
-      emit(const AuthSuccess());
+      final user = await _authRepository.signInWithGoogle();
+      if (user.isEmpty) {
+        // Пользователь закрыл окно Google
+        emit(const AuthInitial());
+      } else {
+        emit(const AuthSuccess());
+      }
     } on FirebaseAuthException catch (e) {
       emit(AuthFailure(_mapError(e.code)));
-    } catch (_) {
-      emit(const AuthInitial());
+    } catch (e) {
+      emit(AuthFailure('Ошибка входа через Google: $e'));
     }
   }
 
@@ -98,12 +101,12 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     try {
       await _authRepository.signOut();
     } catch (_) {
-      // Даже если ошибка — всё равно сбрасываем состояние
+      // Даже при ошибке — сбрасываем состояние
     }
     emit(const AuthInitial());
   }
 
-  // Удаление аккаунта — через репозиторий
+  // Удаление аккаунта
   Future<void> _onDelete(
     AuthDeleteRequested event,
     Emitter<AppState> emit,
@@ -126,12 +129,15 @@ class AppBloc extends Bloc<AppEvent, AppState> {
   }
 
   String _mapError(String code) => switch (code) {
-        'user-not-found'         => 'Пользователь не найден',
-        'wrong-password'         => 'Неверный пароль',
-        'email-already-in-use'   => 'Email уже используется',
-        'invalid-email'          => 'Некорректный email',
-        'weak-password'          => 'Слишком простой пароль',
-        'network-request-failed' => 'Нет подключения',
-        _                        => 'Ошибка: $code',
+        'user-not-found'          => 'Пользователь не найден',
+        'wrong-password'          => 'Неверный пароль',
+        'invalid-credential'      => 'Неверный email или пароль',
+        'email-already-in-use'    => 'Email уже используется',
+        'invalid-email'           => 'Некорректный email',
+        'weak-password'           => 'Слишком простой пароль',
+        'network-request-failed'  => 'Нет подключения к сети',
+        'too-many-requests'       => 'Слишком много попыток. Попробуйте позже',
+        'operation-not-allowed'   => 'Этот способ входа не включён',
+        _                         => 'Ошибка: $code',
       };
 }
