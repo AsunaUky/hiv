@@ -6,6 +6,7 @@ import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/services/language_service.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
+import 'package:hiv/features/home/ui/guest_profile_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -29,16 +30,18 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
+    // Гость — показываем отдельный экран
+    if (_user == null || _user!.isAnonymous) {
+      return const GuestProfileScreen();
+    }
+
     return BlocListener<AppBloc, AppState>(
       listener: (context, state) {
-        // Выход или удаление — идём на логин
         if (state is AuthInitial) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) context.go(RouteNames.login);
           });
         }
-
-        // Ошибка удаления — требуется повторный вход
         if (state is AuthDeleteFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -48,8 +51,6 @@ class _ProfileTabState extends State<ProfileTab> {
             ),
           );
         }
-
-        // Общая ошибка
         if (state is AuthFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -134,7 +135,6 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
     );
     if (confirmed == true && context.mounted) {
-      // Через BLoC → AuthRepository → FirebaseAuthService (Firebase + Google)
       context.read<AppBloc>().add(const AuthSignOutRequested());
     }
   }
@@ -166,7 +166,6 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
     );
     if (confirmed == true && context.mounted) {
-      // Через BLoC → AuthRepository → FirebaseAuthService
       context.read<AppBloc>().add(const AuthDeleteRequested());
     }
   }
@@ -214,7 +213,8 @@ class _ProfileHeader extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             email,
-            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: const TextStyle(
+                fontSize: 14, color: AppColors.textSecondary),
           ),
         ],
       ],
@@ -263,11 +263,8 @@ class _MenuTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: c, size: 22),
       title: Text(label, style: TextStyle(color: c, fontSize: 15)),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        color: AppColors.textHint,
-        size: 20,
-      ),
+      trailing: const Icon(Icons.chevron_right_rounded,
+          color: AppColors.textHint, size: 20),
       onTap: onTap,
     );
   }
@@ -288,16 +285,10 @@ class _LanguageTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _LangButton(
-            label: 'Русский',
-            selected: !isKazakh,
-            onTap: () => onChanged(false),
-          ),
-          _LangButton(
-            label: 'Қазақша',
-            selected: isKazakh,
-            onTap: () => onChanged(true),
-          ),
+          _LangButton(label: 'Русский', selected: !isKazakh,
+              onTap: () => onChanged(false)),
+          _LangButton(label: 'Қазақша', selected: isKazakh,
+              onTap: () => onChanged(true)),
         ],
       ),
     );
