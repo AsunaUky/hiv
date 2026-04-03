@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/features/home/ui/info_screen.dart';
-import 'package:hiv/features/home/ui/edit_profile_screen.dart';
-import 'package:hiv/features/home/ui/test_screen.dart';
+import 'package:hiv/features/home/ui/profile/edit_profile_screen.dart';
+import 'package:hiv/features/home/ui/test/test_screen.dart';
 
 import '../../features/splash/ui/splash_screen.dart';
 import '../../features/login/ui/login_screen.dart';
 import '../../features/login/ui/register_screen.dart';
 import '../../features/home/ui/home_shell.dart';
-import '../../features/home/ui/main_tab.dart';
-import '../../features/home/ui/profile_tab.dart';
+import '../../features/home/ui/map_screen.dart';
+import '../../features/home/ui/profile/profile_tab.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -44,7 +44,7 @@ class AppRouter {
             GoRoute(
               name: RouteNames.mainName,
               path: RouteNames.main,
-              builder: (_, _) => const MainTab(),
+              builder: (_, _) => const MapScreen(),
             ),
             GoRoute(
               name: RouteNames.testName,
