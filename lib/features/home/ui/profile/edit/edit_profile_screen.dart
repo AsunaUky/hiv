@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hiv/core/utils/validator.dart';
-import 'package:hiv/features/home/ui/user_repository.dart';
+import 'package:hiv/features/home/ui/profile/edit/user_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
