@@ -4,8 +4,6 @@ import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/services/language_service.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
-/// Профиль гостя — тот же макет что у ProfileTab,
-/// но без личных данных и с предложением войти.
 class GuestProfileScreen extends StatefulWidget {
   const GuestProfileScreen({super.key});
 
@@ -61,9 +59,7 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
                       : 'Войдите, чтобы открыть все возможности',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                      fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -74,6 +70,7 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
             _MenuTile(
               icon: Icons.login_rounded,
               label: _isKazakh ? 'Кіру' : 'Войти',
+              // go() заменяет текущий маршрут — выходим из ShellRoute корректно
               onTap: () => context.go(RouteNames.login),
             ),
             const Divider(color: AppColors.divider, height: 1),
@@ -140,7 +137,8 @@ class _MenuTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: AppColors.textPrimary, size: 22),
       title: Text(label,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+          style: const TextStyle(
+              color: AppColors.textPrimary, fontSize: 15)),
       trailing: const Icon(Icons.chevron_right_rounded,
           color: AppColors.textHint, size: 20),
       onTap: onTap,
@@ -163,9 +161,13 @@ class _LanguageTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _LangButton(label: 'Русский', selected: !isKazakh,
+          _LangButton(
+              label: 'Русский',
+              selected: !isKazakh,
               onTap: () => onChanged(false)),
-          _LangButton(label: 'Қазақша', selected: isKazakh,
+          _LangButton(
+              label: 'Қазақша',
+              selected: isKazakh,
               onTap: () => onChanged(true)),
         ],
       ),

@@ -47,95 +47,105 @@ class _RegisterScreenState extends State<RegisterScreen> {
       listener: (context, state) {
         if (state is AuthSuccess) context.go(RouteNames.main);
         if (state is AuthFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(state.message),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ));
         }
       },
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch, // растягиваем по ширине
-                children: [
-                  const SizedBox(height: 48),
-                  _RegHeader(),
-                  const SizedBox(height: 36),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
 
-                  // Имя
-                  AppTextField(
-                    controller: _nameCtrl,
-                    hint: 'Ваше имя',
-                    prefixIcon: Icons.person_outline_rounded,
-                    validator: AppValidators.name,
-                  ),
-                  const SizedBox(height: 14),
+                // ── Верхняя часть: поля ────────────────────────
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 48),
+                        _RegHeader(),
+                        const SizedBox(height: 32),
 
-                  // Email
-                  AppTextField(
-                    controller: _emailCtrl,
-                    hint: 'Email',
-                    prefixIcon: Icons.mail_outline_rounded,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: AppValidators.email,
-                  ),
-                  const SizedBox(height: 14),
+                        AppTextField(
+                          controller: _nameCtrl,
+                          hint: 'Ваше имя',
+                          prefixIcon: Icons.person_outline_rounded,
+                          validator: AppValidators.name,
+                        ),
+                        const SizedBox(height: 14),
 
-                  // Пароль
-                  AppTextField(
-                    controller: _passCtrl,
-                    hint: 'Пароль',
-                    prefixIcon: Icons.lock_outline_rounded,
-                    obscureText: _obscure,
-                    suffixIcon: _EyeToggle(
-                      obscure: _obscure,
-                      onTap: () => setState(() => _obscure = !_obscure),
-                    ),
-                    validator: AppValidators.password,
-                  ),
-                  const SizedBox(height: 14),
+                        AppTextField(
+                          controller: _emailCtrl,
+                          hint: 'Email',
+                          prefixIcon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: AppValidators.email,
+                        ),
+                        const SizedBox(height: 14),
 
-                  // Подтверждение пароля
-                  AppTextField(
-                    controller: _pass2Ctrl,
-                    hint: 'Повторите пароль',
-                    prefixIcon: Icons.lock_outline_rounded,
-                    obscureText: _obscure2,
-                    suffixIcon: _EyeToggle(
-                      obscure: _obscure2,
-                      onTap: () => setState(() => _obscure2 = !_obscure2),
-                    ),
-                    validator: (v) =>
-                        AppValidators.confirmPassword(v, _passCtrl.text),
-                  ),
-                  const SizedBox(height: 28),
+                        AppTextField(
+                          controller: _passCtrl,
+                          hint: 'Пароль',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscure,
+                          suffixIcon: _EyeToggle(
+                            obscure: _obscure,
+                            onTap: () => setState(() => _obscure = !_obscure),
+                          ),
+                          validator: AppValidators.password,
+                        ),
+                        const SizedBox(height: 14),
 
-                  // Зарегистрироваться
-                  BlocBuilder<AppBloc, AppState>(
-                    builder: (_, state) => ElevatedButton(
-                      onPressed: state is AuthLoading ? null : _submit,
-                      child: state is AuthLoading
-                          ? const _LoadingIndicator()
-                          : const Text('Зарегистрироваться'),
+                        AppTextField(
+                          controller: _pass2Ctrl,
+                          hint: 'Повторите пароль',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscure2,
+                          suffixIcon: _EyeToggle(
+                            obscure: _obscure2,
+                            onTap: () => setState(() => _obscure2 = !_obscure2),
+                          ),
+                          validator: (v) =>
+                              AppValidators.confirmPassword(v, _passCtrl.text),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                ),
 
-                  AuthBottomLink(
-                    text: 'Уже есть аккаунт?',
-                    linkText: 'Войти',
-                    onTap: () => context.pop(),
+                // ── Кнопки внизу ──────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 12, 28, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      BlocBuilder<AppBloc, AppState>(
+                        builder: (_, state) => ElevatedButton(
+                          onPressed: state is AuthLoading ? null : _submit,
+                          child: state is AuthLoading
+                              ? const _Spinner()
+                              : const Text('Зарегистрироваться'),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      AuthBottomLink(
+                        text: 'Уже есть аккаунт?',
+                        linkText: 'Войти',
+                        onTap: () => context.pop(),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -143,8 +153,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-
-// ─── Вспомогательные виджеты ─────────────────────────────────────
 
 class _RegHeader extends StatelessWidget {
   @override
@@ -163,19 +171,15 @@ class _RegHeader extends StatelessWidget {
               color: Colors.white, size: 24),
         ),
         const SizedBox(height: 24),
-        const Text(
-          'Регистрация',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        const Text('Регистрация',
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            )),
         const SizedBox(height: 6),
-        const Text(
-          'Создайте аккаунт для доступа ко всем функциям',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        ),
+        const Text('Создайте аккаунт для доступа ко всем функциям',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
       ],
     );
   }
@@ -199,8 +203,8 @@ class _EyeToggle extends StatelessWidget {
   }
 }
 
-class _LoadingIndicator extends StatelessWidget {
-  const _LoadingIndicator();
+class _Spinner extends StatelessWidget {
+  const _Spinner();
 
   @override
   Widget build(BuildContext context) {
