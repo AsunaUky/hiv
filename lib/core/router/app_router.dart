@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/features/home/ui/info_screen.dart';
+import 'package:hiv/features/home/ui/map_screen.dart';
 import 'package:hiv/features/home/ui/profile/edit/edit_profile_screen.dart';
+import 'package:hiv/features/home/ui/profile/profile_tab.dart';
 import 'package:hiv/features/home/ui/test/test_screen.dart';
 
 import '../../features/splash/ui/splash_screen.dart';
 import '../../features/login/ui/login_screen.dart';
-import '../../features/login/ui/register_screen.dart';
+import '../../features/login/ui/register_screen.dart'; 
 import '../../features/home/ui/home_shell.dart';
-import '../../features/home/ui/map_screen.dart';
-import '../../features/home/ui/profile/profile_tab.dart';
+import '../../features/home/ui/info_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {

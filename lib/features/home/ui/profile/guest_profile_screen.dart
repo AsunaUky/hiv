@@ -34,13 +34,12 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
           children: [
             const SizedBox(height: 32),
 
-            // Аватар-заглушка + имя
             Column(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 48,
                   backgroundColor: AppColors.divider,
-                  child: const Icon(
+                  child: Icon(
                     Icons.person_outline_rounded,
                     size: 48,
                     color: AppColors.textHint,
@@ -71,23 +70,21 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
 
             const SizedBox(height: 28),
 
-            // Войти / Зарегистрироваться — в том же стиле что меню профиля
             _SectionLabel(label: _isKazakh ? 'Аккаунт' : 'Аккаунт'),
             _MenuTile(
               icon: Icons.login_rounded,
               label: _isKazakh ? 'Кіру' : 'Войти',
-              onTap: () => context.push(RouteNames.login),
+              onTap: () => context.go(RouteNames.login),
             ),
             const Divider(color: AppColors.divider, height: 1),
             _MenuTile(
               icon: Icons.person_add_outlined,
               label: _isKazakh ? 'Тіркелу' : 'Зарегистрироваться',
-              onTap: () => context.push(RouteNames.register),
+              onTap: () => context.go(RouteNames.register),
             ),
 
             const SizedBox(height: 16),
 
-            // Язык — такой же переключатель как в профиле
             _SectionLabel(label: _isKazakh ? 'Тіл' : 'Язык'),
             _LanguageTile(
               isKazakh: _isKazakh,
@@ -104,8 +101,6 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
     );
   }
 }
-
-// ─── Вспомогательные виджеты (копия из ProfileTab) ───────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -168,16 +163,10 @@ class _LanguageTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _LangButton(
-            label: 'Русский',
-            selected: !isKazakh,
-            onTap: () => onChanged(false),
-          ),
-          _LangButton(
-            label: 'Қазақша',
-            selected: isKazakh,
-            onTap: () => onChanged(true),
-          ),
+          _LangButton(label: 'Русский', selected: !isKazakh,
+              onTap: () => onChanged(false)),
+          _LangButton(label: 'Қазақша', selected: isKazakh,
+              onTap: () => onChanged(true)),
         ],
       ),
     );

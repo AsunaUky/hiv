@@ -2,11 +2,10 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/features/home/ui/profile/edit/user_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/theme/app_colors.dart';
-
+import 'package:hiv/core/utils/validator.dart';
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -15,16 +14,16 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _nameKey    = GlobalKey<FormState>();
-  final _emailKey   = GlobalKey<FormState>();
-  final _passKey    = GlobalKey<FormState>();
+  final _nameKey   = GlobalKey<FormState>();
+  final _emailKey  = GlobalKey<FormState>();
+  final _passKey   = GlobalKey<FormState>();
 
   late final TextEditingController _nameCtrl;
-  final _emailCtrl      = TextEditingController();
-  final _emailPassCtrl  = TextEditingController();
-  final _currPassCtrl   = TextEditingController();
-  final _newPassCtrl    = TextEditingController();
-  final _confPassCtrl   = TextEditingController();
+  final _emailCtrl     = TextEditingController();
+  final _emailPassCtrl = TextEditingController();
+  final _currPassCtrl  = TextEditingController();
+  final _newPassCtrl   = TextEditingController();
+  final _confPassCtrl  = TextEditingController();
 
   bool _obscureCurr  = true;
   bool _obscureNew   = true;
@@ -57,8 +56,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  // ── Фото ─────────────────────────────────────────────────────
-
   Future<void> _pickPhoto() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -78,16 +75,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await _repo.uploadPhoto(_pickedImage!);
       if (mounted) {
         _showSuccess('Фото обновлено');
-        setState(() {}); // обновляем аватар
+        setState(() {});
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) _showError('Ошибка загрузки фото');
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
     }
   }
-
-  // ── Имя ───────────────────────────────────────────────────────
 
   Future<void> _saveName() async {
     if (!_nameKey.currentState!.validate()) return;
@@ -101,8 +96,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) setState(() => _savingName = false);
     }
   }
-
-  // ── Email ─────────────────────────────────────────────────────
 
   Future<void> _saveEmail() async {
     if (!_emailKey.currentState!.validate()) return;
@@ -125,8 +118,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) setState(() => _savingEmail = false);
     }
   }
-
-  // ── Пароль ────────────────────────────────────────────────────
 
   Future<void> _savePassword() async {
     if (!_passKey.currentState!.validate()) return;
@@ -168,13 +159,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String _mapError(String code) => switch (code) {
-        'wrong-password'         => 'Неверный пароль',
-        'invalid-credential'     => 'Неверный пароль',
-        'email-already-in-use'   => 'Email уже используется',
-        'invalid-email'          => 'Некорректный email',
-        'weak-password'          => 'Слишком простой пароль',
-        'requires-recent-login'  => 'Выйдите и войдите снова',
-        _                        => 'Ошибка: $code',
+        'wrong-password'        => 'Неверный пароль',
+        'invalid-credential'    => 'Неверный пароль',
+        'email-already-in-use'  => 'Email уже используется',
+        'invalid-email'         => 'Некорректный email',
+        'weak-password'         => 'Слишком простой пароль',
+        'requires-recent-login' => 'Выйдите и войдите снова',
+        _                       => 'Ошибка: $code',
       };
 
   @override
@@ -198,7 +189,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               const SizedBox(height: 24),
 
-              // ── Фото ─────────────────────────────────────────
+              // Фото
               Center(
                 child: Stack(
                   children: [
@@ -224,15 +215,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     if (_uploadingPhoto)
                       Positioned.fill(
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.black38,
                             shape: BoxShape.circle,
                           ),
                           child: const Center(
                             child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
+                                color: Colors.white, strokeWidth: 2),
                           ),
                         ),
                       ),
@@ -260,7 +249,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               const SizedBox(height: 32),
 
-              // ── Имя ──────────────────────────────────────────
+              // Имя
               _SectionLabel(label: 'Имя'),
               Form(
                 key: _nameKey,
@@ -275,18 +264,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 10),
                     _SaveButton(
-                      label: 'Сохранить имя',
-                      loading: _savingName,
-                      onTap: _saveName,
-                    ),
+                        label: 'Сохранить имя',
+                        loading: _savingName,
+                        onTap: _saveName),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
-
-              // ── Email (только для email-пользователей) ────────
               if (hasEmail) ...[
+                const SizedBox(height: 24),
+
+                // Email
                 _SectionLabel(label: 'Email'),
                 Form(
                   key: _emailKey,
@@ -312,10 +300,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       const SizedBox(height: 10),
                       _SaveButton(
-                        label: 'Изменить email',
-                        loading: _savingEmail,
-                        onTap: _saveEmail,
-                      ),
+                          label: 'Изменить email',
+                          loading: _savingEmail,
+                          onTap: _saveEmail),
                       const SizedBox(height: 6),
                       const Text(
                         'На новый адрес придёт письмо для подтверждения',
@@ -325,9 +312,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 24),
 
-                // ── Пароль ────────────────────────────────────
+                // Пароль
                 _SectionLabel(label: 'Пароль'),
                 Form(
                   key: _passKey,
@@ -359,15 +347,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         obscure: _obscureConf,
                         onToggle: () =>
                             setState(() => _obscureConf = !_obscureConf),
-                        validator: (v) => AppValidators.confirmPassword(
-                            v, _newPassCtrl.text),
+                        validator: (v) =>
+                            AppValidators.confirmPassword(v, _newPassCtrl.text),
                       ),
                       const SizedBox(height: 10),
                       _SaveButton(
-                        label: 'Изменить пароль',
-                        loading: _savingPass,
-                        onTap: _savePassword,
-                      ),
+                          label: 'Изменить пароль',
+                          loading: _savingPass,
+                          onTap: _savePassword),
                     ],
                   ),
                 ),
@@ -481,9 +468,7 @@ class _PasswordField extends StatelessWidget {
             color: AppColors.textHint, size: 20),
         suffixIcon: IconButton(
           icon: Icon(
-            obscure
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
+            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
             color: AppColors.textHint,
             size: 20,
           ),
