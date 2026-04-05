@@ -49,6 +49,18 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
+        // Кнопка назад — только если есть куда возвращаться
+        appBar: context.canPop()
+            ? AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.textPrimary, size: 20),
+                  onPressed: () => context.pop(),
+                ),
+              )
+            : null,
         body: SafeArea(
           child: Form(
             key: _formKey,
@@ -56,55 +68,48 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
-                // ── Центральная часть: заголовок + поля ────────
+                // ── Поля по центру ────────────────────────────
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
-                    // Центрируем содержимое вертикально
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height * 0.45,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const _AuthHeader(
-                            title: 'Вход',
-                            subtitle: 'Добро пожаловать',
-                          ),
-                          const SizedBox(height: 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center, // по центру
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _AuthHeader(
+                          title: 'Вход',
+                          subtitle: 'Добро пожаловать',
+                        ),
+                        const SizedBox(height: 32),
 
-                          AppTextField(
-                            controller: _emailCtrl,
-                            hint: 'Email',
-                            prefixIcon: Icons.mail_outline_rounded,
-                            keyboardType: TextInputType.emailAddress,
-                            validator: AppValidators.email,
-                          ),
-                          const SizedBox(height: 14),
+                        AppTextField(
+                          controller: _emailCtrl,
+                          hint: 'Email',
+                          prefixIcon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: AppValidators.email,
+                        ),
+                        const SizedBox(height: 14),
 
-                          AppTextField(
-                            controller: _passCtrl,
-                            hint: 'Пароль',
-                            prefixIcon: Icons.lock_outline_rounded,
-                            obscureText: _obscure,
-                            suffixIcon: _EyeToggle(
-                              obscure: _obscure,
-                              onTap: () =>
-                                  setState(() => _obscure = !_obscure),
-                            ),
-                            validator: AppValidators.password,
+                        AppTextField(
+                          controller: _passCtrl,
+                          hint: 'Пароль',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscure,
+                          suffixIcon: _EyeToggle(
+                            obscure: _obscure,
+                            onTap: () => setState(() => _obscure = !_obscure),
                           ),
-                        ],
-                      ),
+                          validator: AppValidators.password,
+                        ),
+                      ],
                     ),
                   ),
                 ),
 
                 // ── Кнопки внизу ──────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 20),
+                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [

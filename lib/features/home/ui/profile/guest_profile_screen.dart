@@ -32,6 +32,7 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
           children: [
             const SizedBox(height: 32),
 
+            // Аватар + имя
             Column(
               children: [
                 const CircleAvatar(
@@ -55,8 +56,8 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _isKazakh
-                      ? 'Барлық мүмкіндіктерді ашу үшін кіріңіз'
-                      : 'Войдите, чтобы открыть все возможности',
+                      ? 'Барлық мүмкіндіктерді ашу үшін тіркеліңіз'
+                      : 'Зарегистрируйтесь, чтобы открыть все возможности',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 13, color: AppColors.textSecondary),
@@ -66,22 +67,7 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
 
             const SizedBox(height: 28),
 
-            _SectionLabel(label: _isKazakh ? 'Аккаунт' : 'Аккаунт'),
-            _MenuTile(
-              icon: Icons.login_rounded,
-              label: _isKazakh ? 'Кіру' : 'Войти',
-              // go() заменяет текущий маршрут — выходим из ShellRoute корректно
-              onTap: () => context.go(RouteNames.login),
-            ),
-            const Divider(color: AppColors.divider, height: 1),
-            _MenuTile(
-              icon: Icons.person_add_outlined,
-              label: _isKazakh ? 'Тіркелу' : 'Зарегистрироваться',
-              onTap: () => context.go(RouteNames.register),
-            ),
-
-            const SizedBox(height: 16),
-
+            // Язык — сверху как у авторизованного профиля
             _SectionLabel(label: _isKazakh ? 'Тіл' : 'Язык'),
             _LanguageTile(
               isKazakh: _isKazakh,
@@ -89,6 +75,16 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
                 setState(() => _isKazakh = val);
                 LanguageService.save(val);
               },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Только регистрация — там уже есть переход ко входу
+            _SectionLabel(label: _isKazakh ? 'Аккаунт' : 'Аккаунт'),
+            _MenuTile(
+              icon: Icons.person_add_outlined,
+              label: _isKazakh ? 'Тіркелу' : 'Зарегистрироваться',
+              onTap: () => context.go(RouteNames.register),
             ),
 
             const SizedBox(height: 32),
@@ -137,8 +133,7 @@ class _MenuTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: AppColors.textPrimary, size: 22),
       title: Text(label,
-          style: const TextStyle(
-              color: AppColors.textPrimary, fontSize: 15)),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
       trailing: const Icon(Icons.chevron_right_rounded,
           color: AppColors.textHint, size: 20),
       onTap: onTap,
@@ -161,13 +156,9 @@ class _LanguageTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _LangButton(
-              label: 'Русский',
-              selected: !isKazakh,
+          _LangButton(label: 'Русский', selected: !isKazakh,
               onTap: () => onChanged(false)),
-          _LangButton(
-              label: 'Қазақша',
-              selected: isKazakh,
+          _LangButton(label: 'Қазақша', selected: isKazakh,
               onTap: () => onChanged(true)),
         ],
       ),
