@@ -62,67 +62,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
-                // ── Верхняя часть: поля ────────────────────────
+                // ── Центральная часть: заголовок + поля ────────
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 48),
-                        _RegHeader(),
-                        const SizedBox(height: 32),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _RegHeader(),
+                          const SizedBox(height: 28),
 
-                        AppTextField(
-                          controller: _nameCtrl,
-                          hint: 'Ваше имя',
-                          prefixIcon: Icons.person_outline_rounded,
-                          validator: AppValidators.name,
-                        ),
-                        const SizedBox(height: 14),
-
-                        AppTextField(
-                          controller: _emailCtrl,
-                          hint: 'Email',
-                          prefixIcon: Icons.mail_outline_rounded,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: AppValidators.email,
-                        ),
-                        const SizedBox(height: 14),
-
-                        AppTextField(
-                          controller: _passCtrl,
-                          hint: 'Пароль',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscure,
-                          suffixIcon: _EyeToggle(
-                            obscure: _obscure,
-                            onTap: () => setState(() => _obscure = !_obscure),
+                          AppTextField(
+                            controller: _nameCtrl,
+                            hint: 'Ваше имя',
+                            prefixIcon: Icons.person_outline_rounded,
+                            validator: AppValidators.name,
                           ),
-                          validator: AppValidators.password,
-                        ),
-                        const SizedBox(height: 14),
+                          const SizedBox(height: 14),
 
-                        AppTextField(
-                          controller: _pass2Ctrl,
-                          hint: 'Повторите пароль',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscure2,
-                          suffixIcon: _EyeToggle(
-                            obscure: _obscure2,
-                            onTap: () => setState(() => _obscure2 = !_obscure2),
+                          AppTextField(
+                            controller: _emailCtrl,
+                            hint: 'Email',
+                            prefixIcon: Icons.mail_outline_rounded,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: AppValidators.email,
                           ),
-                          validator: (v) =>
-                              AppValidators.confirmPassword(v, _passCtrl.text),
-                        ),
-                      ],
+                          const SizedBox(height: 14),
+
+                          AppTextField(
+                            controller: _passCtrl,
+                            hint: 'Пароль',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: _obscure,
+                            suffixIcon: _EyeToggle(
+                              obscure: _obscure,
+                              onTap: () =>
+                                  setState(() => _obscure = !_obscure),
+                            ),
+                            validator: AppValidators.password,
+                          ),
+                          const SizedBox(height: 14),
+
+                          AppTextField(
+                            controller: _pass2Ctrl,
+                            hint: 'Повторите пароль',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: _obscure2,
+                            suffixIcon: _EyeToggle(
+                              obscure: _obscure2,
+                              onTap: () =>
+                                  setState(() => _obscure2 = !_obscure2),
+                            ),
+                            validator: (v) =>
+                                AppValidators.confirmPassword(
+                                    v, _passCtrl.text),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
 
                 // ── Кнопки внизу ──────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 12, 28, 16),
+                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -141,7 +149,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         linkText: 'Войти',
                         onTap: () => context.pop(),
                       ),
-                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
@@ -170,7 +177,7 @@ class _RegHeader extends StatelessWidget {
           child: const Icon(Icons.health_and_safety_outlined,
               color: Colors.white, size: 24),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         const Text('Регистрация',
             style: TextStyle(
               fontSize: 30,

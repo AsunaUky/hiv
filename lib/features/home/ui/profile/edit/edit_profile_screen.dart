@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
 
+/// Редактирование профиля — фото, имя и пароль. Одна кнопка «Сохранить».
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -16,13 +17,25 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _nameCtrl;
+  final _currPassCtrl = TextEditingController();
+  final _newPassCtrl  = TextEditingController();
+  final _confPassCtrl = TextEditingController();
+
+  bool _obscureCurr = true;
+  bool _obscureNew  = true;
+  bool _obscureConf = true;
 
   File? _pickedImage;
   bool _saving         = false;
   bool _uploadingPhoto = false;
 
+  bool _changePassword = false;
+
   User? get _user => FirebaseAuth.instance.currentUser;
+  bool get _hasEmail => _user?.email != null && !(_user?.isAnonymous ?? true);
+
   final _repo = UserRepository.instance;
 
   @override
@@ -34,10 +47,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _currPassCtrl.dispose();
+    _newPassCtrl.dispose();
+    _confPassCtrl.dispose();
     super.dispose();
   }
 
-  // Выбор фото из галереи
   Future<void> _pickPhoto() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -49,38 +64,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _pickedImage = File(picked.path));
   }
 
-  // Сохранить всё одной кнопкой
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _saving = true);
+
     try {
-      // Загружаем фото если выбрали новое
+      // Фото
       if (_pickedImage != null) {
         setState(() => _uploadingPhoto = true);
         await _repo.uploadPhoto(_pickedImage!);
-        setState(() => _uploadingPhoto = false);
+        if (mounted) {
+          setState(() => _uploadingPhoto = false);
+        }
       }
 
-      // Обновляем имя если изменилось
+      // Имя
       final newName = _nameCtrl.text.trim();
       if (newName != (_user?.displayName ?? '').trim()) {
         await _repo.updateDisplayName(newName);
       }
 
+      // Пароль — только если секция открыта и поля заполнены
+      if (_changePassword && _currPassCtrl.text.isNotEmpty) {
+        await _repo.updatePassword(
+          currentPassword: _currPassCtrl.text,
+          newPassword: _newPassCtrl.text,
+        );
+      }
+
       if (mounted) {
         _showSuccess('Профиль обновлён');
-        Navigator.of(context).pop(); // возвращаемся назад
+        Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) _showError(_mapError(e.code));
+      if (mounted) {
+        _showError(_mapError(e.code));
+      }
     } catch (_) {
-      if (mounted) _showError('Ошибка сохранения. Попробуйте снова.');
+      if (mounted) {
+        _showError('Ошибка сохранения. Попробуйте снова.');
+      }
     } finally {
-      if (mounted) setState(() {
-        _saving = false;
-        _uploadingPhoto = false;
-      });
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _uploadingPhoto = false;
+        });
+      }
     }
   }
 
@@ -101,6 +132,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String _mapError(String code) => switch (code) {
+        'wrong-password'        => 'Неверный текущий пароль',
+        'invalid-credential'    => 'Неверный текущий пароль',
+        'weak-password'         => 'Слишком простой пароль',
         'requires-recent-login' => 'Выйдите и войдите снова',
         _                       => 'Ошибка: $code',
       };
@@ -124,14 +158,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
-              // ── Поля сверху ──────────────────────────────────
+              // ── Поля ─────────────────────────────────────────
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
                       // Аватар
                       Center(
@@ -147,12 +181,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       : null),
                               child: (_pickedImage == null && photoUrl == null)
                                   ? Text(
-                                      (_user?.displayName ?? '?')
-                                          .trim()
-                                          .isEmpty
+                                      ((_user?.displayName ?? '').trim().isEmpty
                                           ? '?'
-                                          : (_user!.displayName![0])
-                                              .toUpperCase(),
+                                          : _user!.displayName![0].toUpperCase()),
                                       style: const TextStyle(
                                         fontSize: 40,
                                         fontWeight: FontWeight.w700,
@@ -174,7 +205,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ),
                                 ),
                               ),
-                            // Кнопка выбора фото
                             Positioned(
                               bottom: 0,
                               right: 0,
@@ -201,22 +231,92 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 28),
 
                       // Имя
                       const _Label(text: 'Имя'),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameCtrl,
-                        // Разрешаем все символы — клавиатура выбирается системой
                         keyboardType: TextInputType.name,
                         textCapitalization: TextCapitalization.words,
                         validator: AppValidators.name,
                         style: const TextStyle(
                             color: AppColors.textPrimary, fontSize: 15),
-                        decoration: _inputDecoration('Ваше имя',
-                            Icons.person_outline_rounded),
+                        decoration: _fieldDecoration(
+                            'Ваше имя', Icons.person_outline_rounded),
                       ),
+
+                      // Смена пароля — только для email-пользователей
+                      if (_hasEmail) ...[
+                        const SizedBox(height: 20),
+                        // Переключатель
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _changePassword = !_changePassword),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _changePassword
+                                    ? Icons.expand_less_rounded
+                                    : Icons.expand_more_rounded,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Изменить пароль',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: _changePassword
+                                      ? TextDecoration.none
+                                      : TextDecoration.underline,
+                                  decorationColor: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        if (_changePassword) ...[
+                          const SizedBox(height: 14),
+                          _PassField(
+                            controller: _currPassCtrl,
+                            hint: 'Текущий пароль',
+                            obscure: _obscureCurr,
+                            onToggle: () =>
+                                setState(() => _obscureCurr = !_obscureCurr),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Введите текущий пароль';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          _PassField(
+                            controller: _newPassCtrl,
+                            hint: 'Новый пароль',
+                            obscure: _obscureNew,
+                            onToggle: () =>
+                                setState(() => _obscureNew = !_obscureNew),
+                            validator: AppValidators.password,
+                          ),
+                          const SizedBox(height: 10),
+                          _PassField(
+                            controller: _confPassCtrl,
+                            hint: 'Повторите новый пароль',
+                            obscure: _obscureConf,
+                            onToggle: () =>
+                                setState(() => _obscureConf = !_obscureConf),
+                            validator: (v) =>
+                                AppValidators.confirmPassword(
+                                    v, _newPassCtrl.text),
+                          ),
+                        ],
+                      ],
 
                       const SizedBox(height: 16),
                     ],
@@ -246,7 +346,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
+  InputDecoration _fieldDecoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: AppColors.textHint),
@@ -275,6 +375,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 }
 
+// ─── Вспомогательные виджеты ─────────────────────────────────────
+
 class _Label extends StatelessWidget {
   const _Label({required this.text});
   final String text;
@@ -288,6 +390,68 @@ class _Label extends StatelessWidget {
         fontWeight: FontWeight.w600,
         color: AppColors.textHint,
         letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+class _PassField extends StatelessWidget {
+  const _PassField({
+    required this.controller,
+    required this.hint,
+    required this.obscure,
+    required this.onToggle,
+    this.validator,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final bool obscure;
+  final VoidCallback onToggle;
+  final String? Function(String?)? validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      validator: validator,
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.textHint),
+        prefixIcon: const Icon(Icons.lock_outline_rounded,
+            color: AppColors.textHint, size: 20),
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: AppColors.textHint,
+            size: 20,
+          ),
+          onPressed: onToggle,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
       ),
     );
   }
