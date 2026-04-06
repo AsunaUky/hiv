@@ -248,76 +248,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
 
                       // Смена пароля — только для email-пользователей
-                      if (_hasEmail) ...[
-                        const SizedBox(height: 20),
-                        // Переключатель
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => _changePassword = !_changePassword),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _changePassword
-                                    ? Icons.expand_less_rounded
-                                    : Icons.expand_more_rounded,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Изменить пароль',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  decoration: _changePassword
-                                      ? TextDecoration.none
-                                      : TextDecoration.underline,
-                                  decorationColor: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        if (_changePassword) ...[
-                          const SizedBox(height: 14),
-                          _PassField(
-                            controller: _currPassCtrl,
-                            hint: 'Текущий пароль',
-                            obscure: _obscureCurr,
-                            onToggle: () =>
-                                setState(() => _obscureCurr = !_obscureCurr),
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return 'Введите текущий пароль';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          _PassField(
-                            controller: _newPassCtrl,
-                            hint: 'Новый пароль',
-                            obscure: _obscureNew,
-                            onToggle: () =>
-                                setState(() => _obscureNew = !_obscureNew),
-                            validator: AppValidators.password,
-                          ),
-                          const SizedBox(height: 10),
-                          _PassField(
-                            controller: _confPassCtrl,
-                            hint: 'Повторите новый пароль',
-                            obscure: _obscureConf,
-                            onToggle: () =>
-                                setState(() => _obscureConf = !_obscureConf),
-                            validator: (v) =>
-                                AppValidators.confirmPassword(
-                                    v, _newPassCtrl.text),
-                          ),
-                        ],
-                      ],
-
+if (_hasEmail) ...[
+  const SizedBox(height: 24),
+  const _Label(text: 'Смена пароля'),
+  const SizedBox(height: 8),
+  _PassField(
+    controller: _currPassCtrl,
+    hint: 'Текущий пароль',
+    obscure: _obscureCurr,
+    onToggle: () => setState(() => _obscureCurr = !_obscureCurr),
+    validator: (v) {
+      if (_newPassCtrl.text.isEmpty) return null; // не обязательно если новый не заполнен
+      if (v == null || v.isEmpty) return 'Введите текущий пароль';
+      return null;
+    },
+  ),
+  const SizedBox(height: 10),
+  _PassField(
+    controller: _newPassCtrl,
+    hint: 'Новый пароль',
+    obscure: _obscureNew,
+    onToggle: () => setState(() => _obscureNew = !_obscureNew),
+    validator: (v) {
+      if (v == null || v.isEmpty) return null; // необязательное поле
+      return AppValidators.password(v);
+    },
+  ),
+  const SizedBox(height: 10),
+  _PassField(
+    controller: _confPassCtrl,
+    hint: 'Повторите новый пароль',
+    obscure: _obscureConf,
+    onToggle: () => setState(() => _obscureConf = !_obscureConf),
+    validator: (v) {
+      if (_newPassCtrl.text.isEmpty) return null;
+      return AppValidators.confirmPassword(v, _newPassCtrl.text);
+    },
+  ),
+],
                       const SizedBox(height: 16),
                     ],
                   ),
