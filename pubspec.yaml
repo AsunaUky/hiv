@@ -34,6 +34,7 @@ dependencies:
   shared_preferences: ^2.5.5 # для хранения данных на устройстве
   flutter_secure_storage: ^10.0.0 # для безопасного хранения данных
   cupertino_icons: ^1.0.8 # для использования иконок в стиле iOS
+  easy_localization: ^3.0.8 # для поддержки нескольких языков в приложении
 
 dev_dependencies: 
   flutter_test:
@@ -45,3 +46,16 @@ flutter:
   assets:
     - .env 
   uses-material-design: true 
+
+
+flutter_native_splash:
+  color: "#9FFFF9"
+  image: assets/icon/android/play_store_512.png
+  android: true
+  ios: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/ios/AppIcon-20@2x.png"
+  min_sdk_android: 21

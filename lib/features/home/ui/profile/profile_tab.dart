@@ -84,8 +84,14 @@ class _ProfileTabState extends State<ProfileTab> {
               _SectionLabel(label: 'Аккаунт'),
               _MenuTile(
                 icon: Icons.edit_outlined,
-                label: _isKazakh ? 'Профильді өзгерту' : 'Редактировать профиль',
-                onTap: () => context.push(RouteNames.editProfile),
+                label: _isKazakh
+                    ? 'Профильді өзгерту'
+                    : 'Редактировать профиль',
+                onTap: () async {
+                  await context.push(RouteNames.editProfile);
+                  // После возврата — обновляем UI с новыми данными
+                  if (mounted) setState(() {});
+                },
               ),
               const Divider(color: AppColors.divider, height: 1),
               _MenuTile(
@@ -214,7 +220,9 @@ class _ProfileHeader extends StatelessWidget {
           Text(
             email,
             style: const TextStyle(
-                fontSize: 14, color: AppColors.textSecondary),
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ],
@@ -263,8 +271,11 @@ class _MenuTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: c, size: 22),
       title: Text(label, style: TextStyle(color: c, fontSize: 15)),
-      trailing: const Icon(Icons.chevron_right_rounded,
-          color: AppColors.textHint, size: 20),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textHint,
+        size: 20,
+      ),
       onTap: onTap,
     );
   }
@@ -285,10 +296,16 @@ class _LanguageTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _LangButton(label: 'Русский', selected: !isKazakh,
-              onTap: () => onChanged(false)),
-          _LangButton(label: 'Қазақша', selected: isKazakh,
-              onTap: () => onChanged(true)),
+          _LangButton(
+            label: 'Русский',
+            selected: !isKazakh,
+            onTap: () => onChanged(false),
+          ),
+          _LangButton(
+            label: 'Қазақша',
+            selected: isKazakh,
+            onTap: () => onChanged(true),
+          ),
         ],
       ),
     );

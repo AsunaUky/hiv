@@ -27,6 +27,10 @@ class FirebaseAuthService {
     if (serverClientId == null) throw Exception('Server client is empty!');
 
     await initialize(serverClientId: serverClientId);
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+
     final completer = Completer<UserCredential?>();
     late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
 
@@ -36,8 +40,12 @@ class FirebaseAuthService {
           switch (event) {
             case GoogleSignInAuthenticationEventSignIn():
               final idToken = event.user.authentication.idToken;
-              final credential = GoogleAuthProvider.credential(idToken: idToken);
-              final userCredential = await _auth.signInWithCredential(credential);
+              final credential = GoogleAuthProvider.credential(
+                idToken: idToken,
+              );
+              final userCredential = await _auth.signInWithCredential(
+                credential,
+              );
               AppLogger.info('Google Sign-In: ${userCredential.user?.email}');
               if (!completer.isCompleted) completer.complete(userCredential);
 
@@ -45,19 +53,32 @@ class FirebaseAuthService {
               if (!completer.isCompleted) completer.complete(null);
           }
         } catch (error, stackTrace) {
-          AppLogger.error('Google Sign-In: ошибка', error: error, stackTrace: stackTrace);
+          AppLogger.error(
+            'Google Sign-In: ошибка',
+            error: error,
+            stackTrace: stackTrace,
+          );
           if (!completer.isCompleted) completer.completeError(error);
         } finally {
           await subscription.cancel();
         }
       },
       onError: (Object error) {
-        AppLogger.error('Google Sign-In: ошибка стрима', error: error);
-        if (!completer.isCompleted) completer.completeError(error);
+        if (error is GoogleSignInException &&
+            error.code == GoogleSignInExceptionCode.canceled) {
+          // Пользователь закрыл окно — не ошибка
+          if (!completer.isCompleted) completer.complete(null);
+        } else {
+          AppLogger.error('Google Sign-In: ошибка', error: error);
+          if (!completer.isCompleted) completer.completeError(error);
+        }
         subscription.cancel();
       },
     );
-
+    // Полностью сбрасываем состояние Google перед новым входом
+    try {
+      await _googleSignIn.disconnect();
+    } catch (_) {}
     _googleSignIn.authenticate();
     return completer.future;
   }

@@ -6,8 +6,6 @@ import 'package:hiv/features/home/ui/profile/edit/user_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
-
-/// Редактирование профиля — фото, имя и пароль. Одна кнопка «Сохранить».
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -30,8 +28,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _pickedImage;
   bool _saving         = false;
   bool _uploadingPhoto = false;
-
-  bool _changePassword = false;
 
   User? get _user => FirebaseAuth.instance.currentUser;
   bool get _hasEmail => _user?.email != null && !(_user?.isAnonymous ?? true);
@@ -74,6 +70,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (_pickedImage != null) {
         setState(() => _uploadingPhoto = true);
         await _repo.uploadPhoto(_pickedImage!);
+        await FirebaseAuth.instance.currentUser?.reload();
         if (mounted) {
           setState(() => _uploadingPhoto = false);
         }
@@ -85,8 +82,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await _repo.updateDisplayName(newName);
       }
 
-      // Пароль — только если секция открыта и поля заполнены
-      if (_changePassword && _currPassCtrl.text.isNotEmpty) {
+      // Пароль — только если новый пароль заполнен
+      if (_newPassCtrl.text.isNotEmpty) {
         await _repo.updatePassword(
           currentPassword: _currPassCtrl.text,
           newPassword: _newPassCtrl.text,
@@ -248,44 +245,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
 
                       // Смена пароля — только для email-пользователей
-if (_hasEmail) ...[
-  const SizedBox(height: 24),
-  const _Label(text: 'Смена пароля'),
-  const SizedBox(height: 8),
-  _PassField(
-    controller: _currPassCtrl,
-    hint: 'Текущий пароль',
-    obscure: _obscureCurr,
-    onToggle: () => setState(() => _obscureCurr = !_obscureCurr),
-    validator: (v) {
-      if (_newPassCtrl.text.isEmpty) return null; // не обязательно если новый не заполнен
-      if (v == null || v.isEmpty) return 'Введите текущий пароль';
-      return null;
-    },
-  ),
-  const SizedBox(height: 10),
-  _PassField(
-    controller: _newPassCtrl,
-    hint: 'Новый пароль',
-    obscure: _obscureNew,
-    onToggle: () => setState(() => _obscureNew = !_obscureNew),
-    validator: (v) {
-      if (v == null || v.isEmpty) return null; // необязательное поле
-      return AppValidators.password(v);
-    },
-  ),
-  const SizedBox(height: 10),
-  _PassField(
-    controller: _confPassCtrl,
-    hint: 'Повторите новый пароль',
-    obscure: _obscureConf,
-    onToggle: () => setState(() => _obscureConf = !_obscureConf),
-    validator: (v) {
-      if (_newPassCtrl.text.isEmpty) return null;
-      return AppValidators.confirmPassword(v, _newPassCtrl.text);
-    },
-  ),
-],
+                      if (_hasEmail) ...[
+                        const SizedBox(height: 24),
+                        const _Label(text: 'Смена пароля'),
+                        const SizedBox(height: 8),
+                        _PassField(
+                          controller: _currPassCtrl,
+                          hint: 'Текущий пароль',
+                          obscure: _obscureCurr,
+                          onToggle: () =>
+                              setState(() => _obscureCurr = !_obscureCurr),
+                          validator: (v) {
+                            if (_newPassCtrl.text.isEmpty) return null;
+                            if (v == null || v.isEmpty) {
+                              return 'Введите текущий пароль';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        _PassField(
+                          controller: _newPassCtrl,
+                          hint: 'Новый пароль',
+                          obscure: _obscureNew,
+                          onToggle: () =>
+                              setState(() => _obscureNew = !_obscureNew),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return null;
+                            return AppValidators.password(v);
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        _PassField(
+                          controller: _confPassCtrl,
+                          hint: 'Повторите новый пароль',
+                          obscure: _obscureConf,
+                          onToggle: () =>
+                              setState(() => _obscureConf = !_obscureConf),
+                          validator: (v) {
+                            if (_newPassCtrl.text.isEmpty) return null;
+                            return AppValidators.confirmPassword(
+                                v, _newPassCtrl.text);
+                          },
+                        ),
+                      ],
+
                       const SizedBox(height: 16),
                     ],
                   ),
