@@ -12,15 +12,15 @@ dependencies:
     sdk: flutter 
   bloc: ^9.2.0 # для управления состоянием приложения
   flutter_bloc: ^9.1.1 # для интеграции BLoC с Flutter
-  go_router: ^17.1.0 # для навигации между экранами
+  go_router: ^17.2.0 # для навигации между экранами
   image_picker: ^1.2.1 # для выбора изображений из галереи или камеры
   url_launcher: ^6.3.2 # для открытия ссылок в браузере
   equatable: ^2.0.8 # для сравнения объектов в BLoC
 
   firebase_core: ^4.5.0 # для инициализации Firebase
   firebase_auth: ^6.2.0 # для аутентификации пользователей
-  cloud_firestore: ^6.1.2 # для работы с базой данных Firestore
-  firebase_storage: ^13.0.6 # для хранения файлов в Firebase Storage
+  cloud_firestore: ^6.3.0 # для работы с базой данных Firestore
+  firebase_storage: ^13.2.0 # для хранения файлов в Firebase Storage
   google_sign_in: ^7.2.0 # для входа через Google
   logger: ^2.7.0 # для логирования ошибок и событий
   firebase_messaging: ^16.1.3 # для получения push-уведомлений
@@ -33,7 +33,7 @@ dependencies:
   sizer: ^3.1.3 # для адаптивного дизайна на разных экранах
   shared_preferences: ^2.5.5 # для хранения данных на устройстве
   flutter_secure_storage: ^10.0.0 # для безопасного хранения данных
-  cupertino_icons: ^1.0.8 # для использования иконок в стиле iOS
+  cupertino_icons: ^1.0.9 # для использования иконок в стиле iOS
   easy_localization: ^3.0.8 # для поддержки нескольких языков в приложении
 
 dev_dependencies: 
