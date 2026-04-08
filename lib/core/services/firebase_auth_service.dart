@@ -27,25 +27,26 @@ class FirebaseAuthService {
     if (serverClientId == null) throw Exception('Server client is empty!');
 
     await initialize(serverClientId: serverClientId);
+
+    // Сбрасываем предыдущую сессию Google ДО подписки на события,
+    // иначе событие SignOut от disconnect() завершает completer раньше времени.
     try {
-      await _googleSignIn.signOut();
+      await _googleSignIn.disconnect();
     } catch (_) {}
 
     final completer = Completer<UserCredential?>();
     late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
 
+    // Подписываемся ПОСЛЕ disconnect — теперь не поймаем ложный SignOut.
     subscription = _googleSignIn.authenticationEvents.listen(
       (event) async {
         try {
           switch (event) {
             case GoogleSignInAuthenticationEventSignIn():
               final idToken = event.user.authentication.idToken;
-              final credential = GoogleAuthProvider.credential(
-                idToken: idToken,
-              );
-              final userCredential = await _auth.signInWithCredential(
-                credential,
-              );
+              final credential = GoogleAuthProvider.credential(idToken: idToken);
+              final userCredential =
+                  await _auth.signInWithCredential(credential);
               AppLogger.info('Google Sign-In: ${userCredential.user?.email}');
               if (!completer.isCompleted) completer.complete(userCredential);
 
@@ -66,7 +67,6 @@ class FirebaseAuthService {
       onError: (Object error) {
         if (error is GoogleSignInException &&
             error.code == GoogleSignInExceptionCode.canceled) {
-          // Пользователь закрыл окно — не ошибка
           if (!completer.isCompleted) completer.complete(null);
         } else {
           AppLogger.error('Google Sign-In: ошибка', error: error);
@@ -75,18 +75,14 @@ class FirebaseAuthService {
         subscription.cancel();
       },
     );
-    // Полностью сбрасываем состояние Google перед новым входом
-    try {
-      await _googleSignIn.disconnect();
-    } catch (_) {}
+
     _googleSignIn.authenticate();
     return completer.future;
   }
 
-  /// Выход — сбрасываем и Firebase и Google сессию.
+  /// Выход — сбрасываем Firebase и Google сессию.
   Future<void> signOut() async {
     try {
-      // Выходим из обоих параллельно; если Google не был активен — игнорируем
       await Future.wait([
         _auth.signOut(),
         _googleSignIn.signOut().catchError((_) {}),
@@ -98,18 +94,16 @@ class FirebaseAuthService {
     }
   }
 
-  /// Удаление аккаунта — сначала выходим из Google, затем удаляем Firebase-пользователя.
+  /// Удаление аккаунта.
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     try {
-      // Выходим из Google перед удалением
       await _googleSignIn.signOut().catchError((_) {});
       await user.delete();
       AppLogger.info('Delete Account: аккаунт удалён');
     } on FirebaseAuthException catch (e) {
-      // requires-recent-login — нужна повторная аутентификация
       AppLogger.error('Delete Account: ошибка', error: e);
       rethrow;
     }

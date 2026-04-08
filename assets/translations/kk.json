@@ -1,0 +1,43 @@
+{
+  "profile": {
+    "title": "Профиль",
+    "edit": "Профильді өзгерту",
+    "signOut": "Шығу",
+    "deleteAccount": "Аккаунтты жою",
+    "language": "Тіл",
+    "account": "Аккаунт",
+    "guest": "Қонақ",
+    "guestSubtitle": "Барлық мүмкіндіктерді ашу үшін тіркеліңіз"
+  },
+  "auth": {
+    "signIn": "Кіру",
+    "register": "Тіркелу",
+    "cancel": "Болдырмау",
+    "confirm": "Растау",
+    "signOutTitle": "Шығу",
+    "signOutConfirm": "Аккаунттан шыққыңыз келе ме?",
+    "deleteTitle": "Аккаунтты жою",
+    "deleteWarning": "Бұл әрекетті кері қайтару мүмкін емес.",
+    "deleteConfirmBtn": "Жою",
+    "reAuthRequired": "Қайта кіру қажет. Шығып, қайта кіріңіз."
+  },
+  "common": {
+    "save": "Сақтау",
+    "error": "Қате орын алды",
+    "loading": "Жүктелуде..."
+  },
+  "edit": {
+    "title": "Профильді өзгерту",
+    "nameLabel": "Есім",
+    "namePlaceholder": "Есіміңіз",
+    "changePasswordLabel": "Құпия сөзді өзгерту",
+    "currentPassword": "Ағымдағы құпия сөз",
+    "newPassword": "Жаңа құпия сөз",
+    "confirmPassword": "Жаңа құпия сөзді қайталаңыз",
+    "success": "Профиль жаңартылды",
+    "errorSave": "Сақтау қатесі. Қайталап көріңіз.",
+    "wrongPassword": "Ағымдағы құпия сөз қате",
+    "weakPassword": "Құпия сөз тым қарапайым",
+    "recentLogin": "Шығып, қайта кіріңіз"
+  }
+}

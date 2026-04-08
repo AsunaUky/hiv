@@ -1,7 +1,7 @@
 /// Валидаторы полей форм.
 abstract final class AppValidators {
 
-  // Email — RFC-совместимая проверка через RegExp
+  // ── Email ─────────────────────────────────────────────────────────
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) return 'Введите email';
     final re = RegExp(r'^[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}$');
@@ -9,7 +9,15 @@ abstract final class AppValidators {
     return null;
   }
 
-  // Пароль — минимум 8 символов, хотя бы одна буква и одна цифра
+  // ── Пароль при ВХОДЕ — только проверка на пустоту ─────────────────
+  // Использовать на LoginScreen. Сложность не проверяем —
+  // пользователь уже мог зарегистрироваться со старым паролем.
+  static String? loginPassword(String? value) {
+    if (value == null || value.isEmpty) return 'Введите пароль';
+    return null;
+  }
+
+  // ── Пароль при РЕГИСТРАЦИИ / смене пароля — полная проверка ───────
   static String? password(String? value) {
     if (value == null || value.isEmpty) return 'Введите пароль';
     if (value.length < 8) return 'Минимум 8 символов';
@@ -22,21 +30,18 @@ abstract final class AppValidators {
     return null;
   }
 
-  // Подтверждение пароля
+  // ── Подтверждение пароля ──────────────────────────────────────────
   static String? confirmPassword(String? value, String original) {
     if (value == null || value.isEmpty) return 'Повторите пароль';
     if (value != original) return 'Пароли не совпадают';
     return null;
   }
 
-  // Имя — минимум 2 символа, без цифр и спецсимволов.
-  // Используем \p{L} через Dart Unicode — принимает русский, казахский, любой язык.
-  // Так как Dart RegExp не поддерживает \p{L}, проверяем только длину и запрещаем цифры.
+  // ── Имя ───────────────────────────────────────────────────────────
   static String? name(String? value) {
     if (value == null || value.trim().isEmpty) return 'Введите имя';
     if (value.trim().length < 2) return 'Слишком короткое имя';
     if (value.contains(RegExp(r'\d'))) return 'Имя не должно содержать цифры';
-    // Запрещаем только явные спецсимволы: @#$%^&*()+=[]{}|\\<>?/
     if (value.contains(RegExp(r'[@#$%^&*()+=\[\]{}|\\<>?/]'))) {
       return 'Имя содержит недопустимые символы';
     }

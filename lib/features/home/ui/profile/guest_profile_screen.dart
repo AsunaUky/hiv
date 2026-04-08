@@ -1,26 +1,11 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
-import 'package:hiv/core/services/language_service.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
-class GuestProfileScreen extends StatefulWidget {
+class GuestProfileScreen extends StatelessWidget {
   const GuestProfileScreen({super.key});
-
-  @override
-  State<GuestProfileScreen> createState() => _GuestProfileScreenState();
-}
-
-class _GuestProfileScreenState extends State<GuestProfileScreen> {
-  bool _isKazakh = false;
-
-  @override
-  void initState() {
-    super.initState();
-    LanguageService.load().then((val) {
-      if (mounted) setState(() => _isKazakh = val);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +31,7 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  _isKazakh ? 'Қонақ' : 'Гость',
+                  tr('profile.guest'),
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -55,9 +40,7 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isKazakh
-                      ? 'Барлық мүмкіндіктерді ашу үшін тіркеліңіз'
-                      : 'Зарегистрируйтесь, чтобы открыть все возможности',
+                  tr('profile.guestSubtitle'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 13, color: AppColors.textSecondary),
@@ -67,24 +50,18 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
 
             const SizedBox(height: 28),
 
-            // Язык — сверху как у авторизованного профиля
-            _SectionLabel(label: _isKazakh ? 'Тіл' : 'Язык'),
-            _LanguageTile(
-              isKazakh: _isKazakh,
-              onChanged: (val) {
-                setState(() => _isKazakh = val);
-                LanguageService.save(val);
-              },
-            ),
+            _SectionLabel(label: tr('profile.language')),
+            const _LanguageTile(),
 
             const SizedBox(height: 16),
 
-            // Только регистрация — там уже есть переход ко входу
-            _SectionLabel(label: _isKazakh ? 'Аккаунт' : 'Аккаунт'),
+            _SectionLabel(label: tr('profile.account')),
             _MenuTile(
               icon: Icons.person_add_outlined,
-              label: _isKazakh ? 'Тіркелу' : 'Зарегистрироваться',
-              onTap: () => context.go(RouteNames.register),
+              label: tr('auth.register'),
+              // FIX [P2-03]: context.go очищал стек — при возврате шло на splash.
+              // context.push сохраняет стек, кнопка «назад» возвращает на гостя.
+              onTap: () => context.push(RouteNames.register),
             ),
 
             const SizedBox(height: 32),
@@ -94,6 +71,8 @@ class _GuestProfileScreenState extends State<GuestProfileScreen> {
     );
   }
 }
+
+// ─── Вспомогательные виджеты ─────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -141,13 +120,13 @@ class _MenuTile extends StatelessWidget {
   }
 }
 
+/// Переключатель языка через easy_localization.
 class _LanguageTile extends StatelessWidget {
-  const _LanguageTile({required this.isKazakh, required this.onChanged});
-  final bool isKazakh;
-  final ValueChanged<bool> onChanged;
+  const _LanguageTile();
 
   @override
   Widget build(BuildContext context) {
+    final isKazakh = context.locale.languageCode == 'kk';
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -156,10 +135,16 @@ class _LanguageTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _LangButton(label: 'Русский', selected: !isKazakh,
-              onTap: () => onChanged(false)),
-          _LangButton(label: 'Қазақша', selected: isKazakh,
-              onTap: () => onChanged(true)),
+          _LangButton(
+            label: 'Русский',
+            selected: !isKazakh,
+            onTap: () => context.setLocale(const Locale('ru')),
+          ),
+          _LangButton(
+            label: 'Қазақша',
+            selected: isKazakh,
+            onTap: () => context.setLocale(const Locale('kk')),
+          ),
         ],
       ),
     );

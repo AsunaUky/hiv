@@ -1,0 +1,43 @@
+{
+  "profile": {
+    "title": "Профиль",
+    "edit": "Редактировать профиль",
+    "signOut": "Выйти",
+    "deleteAccount": "Удалить аккаунт",
+    "language": "Язык",
+    "account": "Аккаунт",
+    "guest": "Гость",
+    "guestSubtitle": "Зарегистрируйтесь, чтобы открыть все возможности"
+  },
+  "auth": {
+    "signIn": "Войти",
+    "register": "Зарегистрироваться",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "signOutTitle": "Выйти",
+    "signOutConfirm": "Вы уверены, что хотите выйти?",
+    "deleteTitle": "Удалить аккаунт",
+    "deleteWarning": "Это действие необратимо. Все данные будут удалены.",
+    "deleteConfirmBtn": "Удалить",
+    "reAuthRequired": "Требуется повторный вход. Выйдите и войдите снова."
+  },
+  "common": {
+    "save": "Сохранить",
+    "error": "Произошла ошибка",
+    "loading": "Загрузка..."
+  },
+  "edit": {
+    "title": "Редактировать профиль",
+    "nameLabel": "Имя",
+    "namePlaceholder": "Ваше имя",
+    "changePasswordLabel": "Смена пароля",
+    "currentPassword": "Текущий пароль",
+    "newPassword": "Новый пароль",
+    "confirmPassword": "Повторите новый пароль",
+    "success": "Профиль обновлён",
+    "errorSave": "Ошибка сохранения. Попробуйте снова.",
+    "wrongPassword": "Неверный текущий пароль",
+    "weakPassword": "Слишком простой пароль",
+    "recentLogin": "Выйдите и войдите снова"
+  }
+}

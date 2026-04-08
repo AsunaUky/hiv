@@ -45,6 +45,7 @@ dev_dependencies:
 flutter:
   assets:
     - .env 
+    - assets/icon/
   uses-material-design: true 
 
 

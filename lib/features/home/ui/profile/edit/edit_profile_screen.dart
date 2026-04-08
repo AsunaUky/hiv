@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hiv/features/home/ui/profile/edit/user_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
+
+/// Редактирование профиля — фото, имя и пароль.
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -71,9 +74,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         setState(() => _uploadingPhoto = true);
         await _repo.uploadPhoto(_pickedImage!);
         await FirebaseAuth.instance.currentUser?.reload();
-        if (mounted) {
-          setState(() => _uploadingPhoto = false);
-        }
+        if (mounted) setState(() => _uploadingPhoto = false);
       }
 
       // Имя
@@ -91,17 +92,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       if (mounted) {
-        _showSuccess('Профиль обновлён');
+        _showSuccess(tr('edit.success'));
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        _showError(_mapError(e.code));
-      }
+      if (mounted) _showError(_mapError(e.code));
     } catch (_) {
-      if (mounted) {
-        _showError('Ошибка сохранения. Попробуйте снова.');
-      }
+      if (mounted) _showError(tr('edit.errorSave'));
     } finally {
       if (mounted) {
         setState(() {
@@ -129,11 +126,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String _mapError(String code) => switch (code) {
-        'wrong-password'        => 'Неверный текущий пароль',
-        'invalid-credential'    => 'Неверный текущий пароль',
-        'weak-password'         => 'Слишком простой пароль',
-        'requires-recent-login' => 'Выйдите и войдите снова',
-        _                       => 'Ошибка: $code',
+        'wrong-password'        => tr('edit.wrongPassword'),
+        'invalid-credential'    => tr('edit.wrongPassword'),
+        'weak-password'         => tr('edit.weakPassword'),
+        'requires-recent-login' => tr('edit.recentLogin'),
+        _                       => '${tr('common.error')}: $code',
       };
 
   @override
@@ -143,7 +140,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Редактировать профиль'),
+        title: Text(tr('edit.title')),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -154,8 +151,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-
-              // ── Поля ─────────────────────────────────────────
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -230,8 +225,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                       const SizedBox(height: 28),
 
-                      // Имя
-                      const _Label(text: 'Имя'),
+                      _Label(text: tr('edit.nameLabel')),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameCtrl,
@@ -241,24 +235,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         style: const TextStyle(
                             color: AppColors.textPrimary, fontSize: 15),
                         decoration: _fieldDecoration(
-                            'Ваше имя', Icons.person_outline_rounded),
+                            tr('edit.namePlaceholder'),
+                            Icons.person_outline_rounded),
                       ),
 
                       // Смена пароля — только для email-пользователей
                       if (_hasEmail) ...[
                         const SizedBox(height: 24),
-                        const _Label(text: 'Смена пароля'),
+                        _Label(text: tr('edit.changePasswordLabel')),
                         const SizedBox(height: 8),
                         _PassField(
                           controller: _currPassCtrl,
-                          hint: 'Текущий пароль',
+                          hint: tr('edit.currentPassword'),
                           obscure: _obscureCurr,
                           onToggle: () =>
                               setState(() => _obscureCurr = !_obscureCurr),
                           validator: (v) {
                             if (_newPassCtrl.text.isEmpty) return null;
                             if (v == null || v.isEmpty) {
-                              return 'Введите текущий пароль';
+                              return tr('edit.currentPassword');
                             }
                             return null;
                           },
@@ -266,7 +261,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(height: 10),
                         _PassField(
                           controller: _newPassCtrl,
-                          hint: 'Новый пароль',
+                          hint: tr('edit.newPassword'),
                           obscure: _obscureNew,
                           onToggle: () =>
                               setState(() => _obscureNew = !_obscureNew),
@@ -278,7 +273,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(height: 10),
                         _PassField(
                           controller: _confPassCtrl,
-                          hint: 'Повторите новый пароль',
+                          hint: tr('edit.confirmPassword'),
                           obscure: _obscureConf,
                           onToggle: () =>
                               setState(() => _obscureConf = !_obscureConf),
@@ -296,7 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
 
-              // ── Одна кнопка снизу ────────────────────────────
+              // Кнопка «Сохранить»
               Padding(
                 padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
                 child: ElevatedButton(
@@ -308,7 +303,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2.5),
                         )
-                      : const Text('Сохранить'),
+                      : Text(tr('common.save')),
                 ),
               ),
             ],
