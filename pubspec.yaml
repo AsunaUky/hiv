@@ -19,7 +19,7 @@ dependencies:
 
   firebase_core: ^4.5.0 # для инициализации Firebase
   firebase_auth: ^6.2.0 # для аутентификации пользователей
-  cloud_firestore: ^6.3.0 # для работы с базой данных Firestore
+  cloud_firestore: ^6.2.0 # для работы с базой данных Firestore
   firebase_storage: ^13.2.0 # для хранения файлов в Firebase Storage
   google_sign_in: ^7.2.0 # для входа через Google
   logger: ^2.7.0 # для логирования ошибок и событий
@@ -46,6 +46,7 @@ flutter:
   assets:
     - .env 
     - assets/icon/
+    - assets/translations/
   uses-material-design: true 
 
 
@@ -58,5 +59,5 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/ios/AppIcon-20@2x.png"
+  image_path: "assets/icon/ios/AppIcon~ios-marketing.png"
   min_sdk_android: 21
