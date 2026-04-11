@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
+/// Экран профиля для незарегистрированного (анонимного) пользователя.
 class GuestProfileScreen extends StatelessWidget {
   const GuestProfileScreen({super.key});
 
@@ -56,11 +57,17 @@ class GuestProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             _SectionLabel(label: tr('profile.account')),
+
+            // FIX: context.push сохраняет стек — «назад» вернёт на гостевой экран.
+            _MenuTile(
+              icon: Icons.login_rounded,
+              label: tr('auth.signIn'),
+              onTap: () => context.push(RouteNames.login),
+            ),
+            const Divider(color: AppColors.divider, height: 1),
             _MenuTile(
               icon: Icons.person_add_outlined,
               label: tr('auth.register'),
-              // FIX [P2-03]: context.go очищал стек — при возврате шло на splash.
-              // context.push сохраняет стек, кнопка «назад» возвращает на гостя.
               onTap: () => context.push(RouteNames.register),
             ),
 

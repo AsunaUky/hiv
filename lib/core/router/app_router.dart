@@ -4,12 +4,14 @@ import 'package:hiv/features/home/ui/map_screen.dart';
 import 'package:hiv/features/home/ui/profile/edit/edit_profile_screen.dart';
 import 'package:hiv/features/home/ui/profile/profile_tab.dart';
 import 'package:hiv/features/home/ui/test/test_screen.dart';
+import 'package:hiv/features/info/domain/article_entity.dart';
+import 'package:hiv/features/info/ui/info_article_screen.dart';
+import 'package:hiv/features/info/ui/info_list_screen.dart';
 
 import '../../features/splash/ui/splash_screen.dart';
 import '../../features/login/ui/login_screen.dart';
-import '../../features/login/ui/register_screen.dart'; 
+import '../../features/login/ui/register_screen.dart';
 import '../../features/home/ui/home_shell.dart';
-import '../../features/home/ui/info_screen.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -17,15 +19,11 @@ class AppRouter {
     return GoRouter(
       initialLocation: RouteNames.splash,
       routes: [
-
-        // Splash
         GoRoute(
           name: RouteNames.splashName,
           path: RouteNames.splash,
           builder: (_, _) => const SplashScreen(),
         ),
-
-        // Вход / регистрация
         GoRoute(
           name: RouteNames.loginName,
           path: RouteNames.login,
@@ -37,7 +35,6 @@ class AppRouter {
           builder: (_, _) => const RegisterScreen(),
         ),
 
-        // Home — все 4 вкладки внутри ShellRoute → BottomNav везде
         ShellRoute(
           builder: (_, _, child) => HomeShell(child: child),
           routes: [
@@ -51,10 +48,11 @@ class AppRouter {
               path: RouteNames.test,
               builder: (_, _) => const TestScreen(),
             ),
+            // Список статей — внутри Shell (BottomNav виден)
             GoRoute(
               name: RouteNames.infoName,
               path: RouteNames.info,
-              builder: (_, _) => const InfoScreen(title: '', content: ''),
+              builder: (_, _) => const InfoListScreen(),
             ),
             GoRoute(
               name: RouteNames.profileName,
@@ -64,7 +62,6 @@ class AppRouter {
           ],
         ),
 
-        // Без BottomNav
         GoRoute(
           name: RouteNames.testResultName,
           path: RouteNames.testResult,
@@ -72,30 +69,28 @@ class AppRouter {
             body: Center(child: Text('Результат теста')),
           ),
         ),
+
+        // Статья — вне Shell (BottomNav скрыт), данные через extra
         GoRoute(
           name: RouteNames.infoArticleName,
           path: RouteNames.infoArticle,
           builder: (_, state) {
-            final extra = state.extra as Map<String, dynamic>?;
-            return InfoScreen(
-              title:   extra?['title']   as String? ?? '',
-              content: extra?['content'] as String? ?? '',
-            );
+            final article = state.extra as ArticleEntity;
+            return InfoArticleScreen(article: article);
           },
         ),
+
         GoRoute(
           name: RouteNames.editProfileName,
           path: RouteNames.editProfile,
           builder: (_, _) => const EditProfileScreen(),
         ),
-
       ],
 
-      // 404
       errorBuilder: (context, state) => Scaffold(
         body: Center(
           child: Text(
-            'Страница не найдена: ${state.uri}',
+            'Страница не найдена: \${state.uri}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
