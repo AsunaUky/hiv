@@ -15,6 +15,9 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
+    final _ = Localizations.localeOf(context); // истинный InheritedWidget — триггерит rebuild
+
     if (_user == null || _user!.isAnonymous) {
       return const GuestProfileScreen();
     }
@@ -26,12 +29,16 @@ class ProfileTab extends StatelessWidget {
             if (context.mounted) context.go(RouteNames.login);
           });
         }
-        if (state is AuthDeleteFailure || state is AuthFailure) {
-          final msg = state is AuthDeleteFailure
-              ? state.message
-              : (state as AuthFailure).message;
+        if (state is AuthDeleteFailure) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(msg),
+            content: Text(state.message),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+        if (state is AuthFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(state.message),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ));
@@ -55,12 +62,7 @@ class ProfileTab extends StatelessWidget {
               _MenuTile(
                 icon: Icons.edit_outlined,
                 label: tr('profile.edit'),
-                onTap: () async {
-                  await context.push(RouteNames.editProfile);
-                  // После возврата — перестраиваем UI с новыми данными.
-                  // ignore: use_build_context_synchronously
-                  if (context.mounted) (context as Element).markNeedsBuild();
-                },
+                onTap: () => context.push(RouteNames.editProfile),
               ),
               const Divider(color: AppColors.divider, height: 1),
               _MenuTile(
@@ -143,7 +145,7 @@ class _ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photoUrl = user?.photoURL;
-    final name = user?.displayName ?? 'Пользователь';
+    final name = user?.displayName ?? '';
     final email = user?.email ?? '';
 
     return Column(
@@ -164,11 +166,14 @@ class _ProfileHeader extends StatelessWidget {
               : null,
         ),
         const SizedBox(height: 14),
-        Text(name,
-            style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary)),
+        Text(
+          name.isNotEmpty ? name : tr('profile.guest'),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
         if (email.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(email,
@@ -185,20 +190,18 @@ class _SectionLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 4),
-      child: Text(
-        label.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textHint,
-          letterSpacing: 1.2,
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, top: 4),
+        child: Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textHint,
+            letterSpacing: 1.2,
+          ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 class _MenuTile extends StatelessWidget {
@@ -228,13 +231,12 @@ class _MenuTile extends StatelessWidget {
   }
 }
 
-/// Переключатель языка через easy_localization (без setState).
 class _LanguageTile extends StatelessWidget {
   const _LanguageTile();
 
   @override
   Widget build(BuildContext context) {
-    final isKazakh = context.locale.languageCode == 'kk';
+    final isKazakh = Localizations.localeOf(context).languageCode == 'kk';
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -265,34 +267,33 @@ class _LangButton extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
+
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(4),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : AppColors.textSecondary,
+  Widget build(BuildContext context) => Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.all(4),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }

@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
-/// Экран профиля для незарегистрированного (анонимного) пользователя.
 class GuestProfileScreen extends StatelessWidget {
   const GuestProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
+    final _ = Localizations.localeOf(context); // истинный InheritedWidget — триггерит rebuild
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -57,8 +59,6 @@ class GuestProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             _SectionLabel(label: tr('profile.account')),
-
-            // FIX: context.push сохраняет стек — «назад» вернёт на гостевой экран.
             _MenuTile(
               icon: Icons.login_rounded,
               label: tr('auth.signIn'),
@@ -86,20 +86,18 @@ class _SectionLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 4),
-      child: Text(
-        label.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textHint,
-          letterSpacing: 1.2,
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, top: 4),
+        child: Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textHint,
+            letterSpacing: 1.2,
+          ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 class _MenuTile extends StatelessWidget {
@@ -114,26 +112,24 @@ class _MenuTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: AppColors.textPrimary, size: 22),
-      title: Text(label,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
-      trailing: const Icon(Icons.chevron_right_rounded,
-          color: AppColors.textHint, size: 20),
-      onTap: onTap,
-    );
-  }
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: AppColors.textPrimary, size: 22),
+        title: Text(label,
+            style:
+                const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+        trailing: const Icon(Icons.chevron_right_rounded,
+            color: AppColors.textHint, size: 20),
+        onTap: onTap,
+      );
 }
 
-/// Переключатель языка через easy_localization.
 class _LanguageTile extends StatelessWidget {
   const _LanguageTile();
 
   @override
   Widget build(BuildContext context) {
-    final isKazakh = context.locale.languageCode == 'kk';
+    final isKazakh = Localizations.localeOf(context).languageCode == 'kk';
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -164,34 +160,33 @@ class _LangButton extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
+
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(4),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : AppColors.textSecondary,
+  Widget build(BuildContext context) => Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.all(4),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }

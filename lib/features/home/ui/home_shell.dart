@@ -4,18 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
-/// Оболочка с нижней навигацией для всех вкладок приложения.
-///
-/// FIX [P2-01]: Индекс таба теперь вычисляется из текущего маршрута,
-/// а не хранится в [State]. Это предотвращает сброс на первую вкладку
-/// при смене локали (easy_localization вызывает rebuild всего дерева,
-/// но маршрут при этом не меняется).
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.child});
 
   final Widget child;
 
-  // Соответствие: индекс таба → путь маршрута.
   static const _tabs = [
     RouteNames.main,
     RouteNames.test,
@@ -23,7 +16,6 @@ class HomeShell extends StatelessWidget {
     RouteNames.profile,
   ];
 
-  /// Вычисляем активный таб из текущего пути — не из состояния.
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     for (int i = 0; i < _tabs.length; i++) {
@@ -32,26 +24,26 @@ class HomeShell extends StatelessWidget {
     return 0;
   }
 
-  void _onTap(BuildContext context, int index) {
-    // go() — не push(), чтобы не накапливать историю вкладок.
-    context.go(_tabs[index]);
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Localizations.localeOf() — настоящий InheritedWidget lookup.
+    // context.locale (easy_localization) использует findAncestorStateOfType
+    // и зависимости НЕ создаёт — виджет не перестраивается при смене языка.
+    // ignore: unused_local_variable
+    final _ = Localizations.localeOf(context);
+
     final currentIndex = _currentIndex(context);
 
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
-        onTap: (i) => _onTap(context, i),
+        onTap: (i) => context.go(_tabs[i]),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textHint,
         backgroundColor: AppColors.surface,
         elevation: 8,
-        // FIX [P1-01]: метки теперь через tr(), не хардкод.
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.map_outlined),

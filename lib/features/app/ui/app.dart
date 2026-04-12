@@ -10,26 +10,25 @@ import '../../../core/router/app_router.dart';
 
 /// Корневой виджет приложения.
 ///
-/// Оборачивает всё в:
-/// 1. [BlocProvider] — предоставляет [AppBloc] всем виджетам ниже.
-/// 2. [MaterialApp.router] — настраивает тему, роутер и локализацию.
-///
-/// Локализация подключена через стандартный механизм Flutter (intl + .arb).
-/// Сгенерированный класс [AppLocalizations] содержит:
-/// - [AppLocalizations.localizationsDelegates] — список всех делегатов,
-///   включая наш и встроенные (Material, Cupertino, Widgets).
-/// - [AppLocalizations.supportedLocales] — список поддерживаемых языков,
-///   который автоматически берётся из .arb файлов.
-class HivApp extends StatelessWidget {
+/// StatefulWidget вместо StatelessWidget — чтобы [GoRouter] создавался
+/// ровно один раз в [State], а не при каждом вызове [build].
+/// Иначе смена локали (easy_localization → setState) пересоздаёт роутер
+/// и сбрасывает навигацию на [initialLocation].
+class HivApp extends StatefulWidget {
   const HivApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final router = AppRouter.create();
+  State<HivApp> createState() => _HivAppState();
+}
 
+class _HivAppState extends State<HivApp> {
+  // FIX: создаётся один раз — не зависит от rebuild'а
+  late final _router = AppRouter.create();
+
+  @override
+  Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AppBloc(authRepository: AuthRepository.instance),
-
       child: MaterialApp.router(
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
@@ -37,7 +36,7 @@ class HivApp extends StatelessWidget {
         title: AppConstants.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        routerConfig: router,
+        routerConfig: _router,
       ),
     );
   }
