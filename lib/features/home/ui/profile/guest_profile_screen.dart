@@ -1,6 +1,7 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 
@@ -126,31 +127,21 @@ class _MenuTile extends StatelessWidget {
 
 class _LanguageTile extends StatelessWidget {
   const _LanguageTile();
-
   @override
   Widget build(BuildContext context) {
-    final isKazakh = Localizations.localeOf(context).languageCode == 'kk';
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+    final isKazakh = context.watch<LocaleCubit>().state.languageCode == 'kk';
+    return Row(children: [
+      _LangButton(
+        label: 'Русский',
+        selected: !isKazakh,
+        onTap: () => context.read<LocaleCubit>().setLocale(const Locale('ru')),
       ),
-      child: Row(
-        children: [
-          _LangButton(
-            label: 'Русский',
-            selected: !isKazakh,
-            onTap: () => context.setLocale(const Locale('ru')),
-          ),
-          _LangButton(
-            label: 'Қазақша',
-            selected: isKazakh,
-            onTap: () => context.setLocale(const Locale('kk')),
-          ),
-        ],
+      _LangButton(
+        label: 'Қазақша',
+        selected: isKazakh,
+        onTap: () => context.read<LocaleCubit>().setLocale(const Locale('kk')),
       ),
-    );
+    ]);
   }
 }
 

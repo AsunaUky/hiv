@@ -1,0 +1,17 @@
+# Конфигурация генератора локализации Flutter (flutter gen-l10n).
+# Файл должен называться l10n.yaml (строчная L, не заглавная I).
+
+# Папка с .arb файлами переводов.
+arb-dir: lib/l10n
+
+# Шаблонный файл — русский язык (основной, fallback).
+template-arb-file: app_ru.arb
+
+# Имя сгенерированного класса.
+output-class: AppLocalizations
+
+# Папка для сгенерированных .dart файлов.
+output-dir: lib/l10n/generated
+
+# Не-nullable геттер: AppLocalizations.of(context) вместо AppLocalizations.of(context)!
+nullable-getter: false

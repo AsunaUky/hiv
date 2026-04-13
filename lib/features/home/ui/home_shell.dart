@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
@@ -48,7 +47,7 @@ class HomeShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: const Icon(Icons.map_outlined),
             activeIcon: const Icon(Icons.map_rounded),
-            label: tr('nav.map'),
+            label: l10n.navMap,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.quiz_outlined),
