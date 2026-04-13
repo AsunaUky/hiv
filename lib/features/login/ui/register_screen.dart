@@ -55,7 +55,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       },
       child: Scaffold(
-        // Кнопка назад всегда — на регистрацию всегда есть куда вернуться
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -63,8 +62,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: AppColors.textPrimary, size: 20),
             onPressed: () {
-              // Если пришли через push (из login) — pop
-              // Если через go (из guest) — идём на login
               if (context.canPop()) {
                 context.pop();
               } else {
@@ -80,7 +77,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
-                // ── Поля по центру ────────────────────────────
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -139,7 +135,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
 
-                // ── Кнопки внизу ──────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Column(
@@ -155,17 +150,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Переход ко входу
+                      // FIX: всегда push на логин, а не pop().
+                      // pop() возвращал на предыдущий экран в стеке —
+                      // если пришли с гостевого профиля, уходил туда, а не на вход.
                       AuthBottomLink(
                         text: 'Уже есть аккаунт?',
                         linkText: 'Войти',
-                        onTap: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go(RouteNames.login);
-                          }
-                        },
+                        onTap: () => context.push(RouteNames.login),
                       ),
                     ],
                   ),
@@ -204,8 +195,7 @@ class _RegHeader extends StatelessWidget {
             )),
         const SizedBox(height: 6),
         const Text('Создайте аккаунт для доступа ко всем функциям',
-            style:
-                TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
       ],
     );
   }
