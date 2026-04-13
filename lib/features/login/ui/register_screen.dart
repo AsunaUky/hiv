@@ -76,7 +76,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -86,7 +85,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         _RegHeader(),
                         const SizedBox(height: 28),
-
                         AppTextField(
                           controller: _nameCtrl,
                           hint: 'Ваше имя',
@@ -94,7 +92,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           validator: AppValidators.name,
                         ),
                         const SizedBox(height: 14),
-
                         AppTextField(
                           controller: _emailCtrl,
                           hint: 'Email',
@@ -103,7 +100,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           validator: AppValidators.email,
                         ),
                         const SizedBox(height: 14),
-
                         AppTextField(
                           controller: _passCtrl,
                           hint: 'Пароль',
@@ -116,7 +112,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           validator: AppValidators.password,
                         ),
                         const SizedBox(height: 14),
-
                         AppTextField(
                           controller: _pass2Ctrl,
                           hint: 'Повторите пароль',
@@ -124,8 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: _obscure2,
                           suffixIcon: _EyeToggle(
                             obscure: _obscure2,
-                            onTap: () =>
-                                setState(() => _obscure2 = !_obscure2),
+                            onTap: () => setState(() => _obscure2 = !_obscure2),
                           ),
                           validator: (v) =>
                               AppValidators.confirmPassword(v, _passCtrl.text),
@@ -134,7 +128,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Column(
@@ -149,14 +142,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // FIX: всегда push на логин, а не pop().
-                      // pop() возвращал на предыдущий экран в стеке —
-                      // если пришли с гостевого профиля, уходил туда, а не на вход.
+                      // pushReplacement: заменяет текущий экран в стеке,
+                      // не добавляет новый. Сколько бы раз ни переключались
+                      // login ↔ register — назад всегда один шаг до профиля.
                       AuthBottomLink(
                         text: 'Уже есть аккаунт?',
                         linkText: 'Войти',
-                        onTap: () => context.push(RouteNames.login),
+                        onTap: () =>
+                            context.pushReplacement(RouteNames.login),
                       ),
                     ],
                   ),

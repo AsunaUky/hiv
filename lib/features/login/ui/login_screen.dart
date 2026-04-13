@@ -49,7 +49,6 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
-        // Кнопка назад — только если есть куда возвращаться
         appBar: context.canPop()
             ? AppBar(
                 backgroundColor: Colors.transparent,
@@ -67,13 +66,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-
-                // ── Поля по центру ────────────────────────────
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center, // по центру
+                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const _AuthHeader(
@@ -81,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           subtitle: 'Добро пожаловать',
                         ),
                         const SizedBox(height: 32),
-
                         AppTextField(
                           controller: _emailCtrl,
                           hint: 'Email',
@@ -90,7 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           validator: AppValidators.email,
                         ),
                         const SizedBox(height: 14),
-
                         AppTextField(
                           controller: _passCtrl,
                           hint: 'Пароль',
@@ -100,14 +95,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscure: _obscure,
                             onTap: () => setState(() => _obscure = !_obscure),
                           ),
-                          validator: AppValidators.password,
+                          validator: AppValidators.loginPassword,
                         ),
                       ],
                     ),
                   ),
                 ),
-
-                // ── Кнопки внизу ──────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Column(
@@ -122,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-
                       BlocBuilder<AppBloc, AppState>(
                         builder: (context, state) => GoogleSignInButton(
                           loading: state is AuthLoading,
@@ -132,7 +124,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-
                       BlocBuilder<AppBloc, AppState>(
                         builder: (context, state) => OutlinedButton.icon(
                           onPressed: state is AuthLoading
@@ -154,11 +145,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
+                      // pushReplacement: заменяет вход на регистрацию в стеке.
+                      // Сколько бы раз ни переключались — назад всегда один шаг.
                       AuthBottomLink(
                         text: 'Нет аккаунта?',
                         linkText: 'Зарегистрироваться',
-                        onTap: () => context.push(RouteNames.register),
+                        onTap: () =>
+                            context.pushReplacement(RouteNames.register),
                       ),
                     ],
                   ),
