@@ -13,6 +13,7 @@ dependencies:
   bloc: ^9.2.0 # для управления состоянием приложения
   flutter_bloc: ^9.1.1 # для интеграции BLoC с Flutter
   go_router: ^17.2.0 # для навигации между экранами
+  intl: ^0.20.2 # для интернационализации и форматирования дат
   image_picker: ^1.2.1 # для выбора изображений из галереи или камеры
   url_launcher: ^6.3.2 # для открытия ссылок в браузере
   equatable: ^2.0.8 # для сравнения объектов в BLoC
@@ -28,8 +29,6 @@ dependencies:
   flutter_dotenv: ^6.0.0 # для загрузки переменных окружения из .env файла
   permission_handler: ^12.0.1 # для запроса разрешений у пользователя
   geolocator: ^14.0.2  # для получения геолокации пользователя
-  flutter_native_splash: ^2.4.7 # для создания нативного сплэш-экрана
-  flutter_launcher_icons: ^0.14.4 # для генерации иконок приложения
   sizer: ^3.1.3 # для адаптивного дизайна на разных экранах
   shared_preferences: ^2.5.5 # для хранения данных на устройстве
   flutter_secure_storage: ^10.0.0 # для безопасного хранения данных
@@ -41,8 +40,11 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0 # для статического анализа кода
   very_good_analysis: ^10.2.0  # для более строгого анализа кода
+  flutter_native_splash: ^2.4.7 # для создания нативного сплэш-экрана
+  flutter_launcher_icons: ^0.14.4 # для генерации иконок приложения
 
 flutter:
+  generate: true     # ← Включает генерацию l10n-кода
   assets:
     - .env 
     - assets/icon/
@@ -52,12 +54,34 @@ flutter:
 
 flutter_native_splash:
   color: "#9FFFF9"
-  image: assets/icon/android/play_store_512.png
+  image: "assets/icons/splash_icon.png"
+  image_dark: "assets/icons/splash_icon.png"
+  # Размер иконки (fill = на весь экран, оставляем по центру)
+  fullscreen: false
+  android_12:
+    # Android 12+ использует отдельный API для сплеша
+    color: "#9FFFF9"
+    color_dark: "#1A2E2D"
+    image: "assets/icons/splash_icon.png"
+    icon_background_color: "#9FFFF9"
+    icon_background_color_dark: "#1A2E2D"
   android: true
   ios: true
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/ios/AppIcon~ios-marketing.png"
+  # Иконка для iOS и Android одним PNG
+  image_path: "assets/icons/app_icon.png"
+  # Android adaptive icon (API 26+)
+  # foreground отображается поверх background с масштабированием
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  adaptive_icon_background: "assets/icons/app_icon_background.png"
+  # Android 13+ monochrome (тёмная тема / themed icons)
+  adaptive_icon_monochrome: "assets/icons/app_icon_foreground.png"
+  # iOS — убрать белый фон, оставить PNG как есть
+  remove_alpha_ios: true
+  # Web (опционально)
+  web:
+    generate: false
   min_sdk_android: 21
