@@ -7,6 +7,11 @@ arb-dir: lib/l10n
 # Шаблонный файл — русский язык (основной, fallback).
 template-arb-file: app_ru.arb
 
+# Папка для сгенерированных .dart файлов.
+output-dir: lib/l10n/generated
+
+strict-metadata: false # Отключает обязательное описание ключей через @
+
 # Имя сгенерированного класса.
 output-class: AppLocalizations
 
