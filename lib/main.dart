@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:hiv/core/utils/database_seeder.dart';
 import 'package:hiv/features/app/ui/app.dart';
 import 'package:hiv/firebase_options.dart';
 
@@ -11,7 +10,5 @@ void main() async {
     await dotenv.load();
   } catch (_) {}
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // ВСТАВЬ ЭТО ТУТ НА ОДИН ЗАПУСК:
-  await DatabaseSeeder.seedAllArticles();
   runApp(const HivApp());
 }
