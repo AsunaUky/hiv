@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/l10n/generated/app_localizations.dart';
 
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.child});
@@ -25,12 +26,7 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Localizations.localeOf() — настоящий InheritedWidget lookup.
-    // context.locale (easy_localization) использует findAncestorStateOfType
-    // и зависимости НЕ создаёт — виджет не перестраивается при смене языка.
-    // ignore: unused_local_variable
-    final _ = Localizations.localeOf(context);
-
+    final l10n = AppLocalizations.of(context);
     final currentIndex = _currentIndex(context);
 
     return Scaffold(
@@ -52,17 +48,17 @@ class HomeShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: const Icon(Icons.quiz_outlined),
             activeIcon: const Icon(Icons.quiz_rounded),
-            label: tr('nav.test'),
+            label: l10n.navTest,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.info_outline_rounded),
             activeIcon: const Icon(Icons.info_rounded),
-            label: tr('nav.info'),
+            label: l10n.navInfo,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person_outline_rounded),
             activeIcon: const Icon(Icons.person_rounded),
-            label: tr('nav.profile'),
+            label: l10n.navProfile,
           ),
         ],
       ),

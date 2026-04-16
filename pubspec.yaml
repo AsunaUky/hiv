@@ -49,7 +49,6 @@ flutter:
   assets:
     - .env
     - assets/icons/
-    - assets/translations/
   uses-material-design: true
 
 
