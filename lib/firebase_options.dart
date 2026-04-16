@@ -4,9 +4,9 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
+/// "Стандартные [FirebaseOptions] для использования с вашими приложениями Firebase."
 ///
-/// Example:
+/// Example: 
 /// ```dart
 /// import 'firebase_options.dart';
 /// // ...
@@ -54,6 +54,7 @@ class DefaultFirebaseOptions {
     appId: '1:873071179090:android:45aa47134dd0fb3ec5b68b',
     messagingSenderId: '873071179090',
     projectId: 'hiv-app-5691f',
+    databaseURL: 'https://hiv-app-5691f-default-rtdb.firebaseio.com',
     storageBucket: 'hiv-app-5691f.firebasestorage.app',
   );
 
@@ -62,8 +63,9 @@ class DefaultFirebaseOptions {
     appId: '1:873071179090:ios:e7dee65ea26952c4c5b68b',
     messagingSenderId: '873071179090',
     projectId: 'hiv-app-5691f',
+    databaseURL: 'https://hiv-app-5691f-default-rtdb.firebaseio.com',
     storageBucket: 'hiv-app-5691f.firebasestorage.app',
-    androidClientId: '873071179090-9ob8i532vr0fqih9igjc8p8q5dcpbdo0.apps.googleusercontent.com',
+    androidClientId: '873071179090-0cju56a2ooq54mop24f081uktprmmjh0.apps.googleusercontent.com',
     iosClientId: '873071179090-oae95ld7ji5q6ja06sfo5d00goajl7bg.apps.googleusercontent.com',
     iosBundleId: 'com.example.hiv',
   );

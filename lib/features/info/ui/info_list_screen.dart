@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/info/data/articles_local_datasource.dart';
 import 'package:hiv/features/info/domain/article_entity.dart';
+import 'package:hiv/l10n/generated/app_localizations.dart';
 
 /// Вкладка «Информация» — список из трёх статей.
 ///
@@ -13,7 +15,9 @@ class InfoListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final articles = ArticlesLocalDatasource.instance.getAll();
+    final articles = ArticlesLocalDatasource.instance.getAll(
+      context as AppLocalizations,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -24,7 +28,7 @@ class InfoListScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
               child: Text(
-                tr('info.title'),
+                context.locale.infoTitle,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
@@ -33,8 +37,7 @@ class InfoListScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                 itemCount: articles.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, i) =>
-                    _ArticleCard(article: articles[i]),
+                itemBuilder: (context, i) => _ArticleCard(article: articles[i]),
               ),
             ),
           ],
