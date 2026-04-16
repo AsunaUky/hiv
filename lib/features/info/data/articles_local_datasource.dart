@@ -13,7 +13,7 @@ class ArticlesLocalDatasource {
       ];
 
   ArticleEntity _whatIsHiv(AppLocalizations l) => ArticleEntity(
-        id: 'whatIsHiv',
+        id: 'what-is-hiv',
         title: l.hivTitle,
         subtitle: l.hivSubtitle,
         iconCode: Icons.info_outline_rounded.codePoint,
