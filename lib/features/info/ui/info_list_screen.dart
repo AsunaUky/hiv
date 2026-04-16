@@ -15,9 +15,8 @@ class InfoListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final articles = ArticlesLocalDatasource.instance.getAll(
-      context as AppLocalizations,
-    );
+    final l = AppLocalizations.of(context);
+    final articles = ArticlesLocalDatasource.instance.getAll(l);
 
     return Scaffold(
       backgroundColor: AppColors.background,

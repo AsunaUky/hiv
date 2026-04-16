@@ -16,7 +16,7 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _ = AppLocalizations.of(context); 
+    final l10n = AppLocalizations.of(context);
 
     if (_user == null || _user!.isAnonymous) {
       return const GuestProfileScreen();
@@ -54,28 +54,28 @@ class ProfileTab extends StatelessWidget {
               _ProfileHeader(user: _user),
               const SizedBox(height: 32),
 
-              _SectionLabel(label: tr('profile.language')),
+              _SectionLabel(label: l10n.profileLanguage),
               const _LanguageTile(),
               const SizedBox(height: 16),
 
-              _SectionLabel(label: tr('profile.account')),
+              _SectionLabel(label: l10n.profileAccount),
               _MenuTile(
                 icon: Icons.edit_outlined,
-                label: tr('profile.edit'),
+                label: l10n.profileEdit,
                 onTap: () => context.push(RouteNames.editProfile),
               ),
               const Divider(color: AppColors.divider, height: 1),
               _MenuTile(
                 icon: Icons.logout_rounded,
-                label: tr('profile.signOut'),
-                onTap: () => _confirmSignOut(context),
+                label: l10n.profileSignOut,
+                onTap: () => _confirmSignOut(context, l10n),
               ),
               const Divider(color: AppColors.divider, height: 1),
               _MenuTile(
                 icon: Icons.delete_outline_rounded,
-                label: tr('profile.deleteAccount'),
+                label: l10n.profileDeleteAccount,
                 color: AppColors.error,
-                onTap: () => _confirmDelete(context),
+                onTap: () => _confirmDelete(context, l10n),
               ),
               const SizedBox(height: 32),
             ],
@@ -85,22 +85,24 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmSignOut(BuildContext context) async {
+  Future<void> _confirmSignOut(BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
       builder: (ctx) => AlertDialog(
-        title: Text(tr('auth.signOutTitle')),
-        content: Text(tr('auth.signOutConfirm')),
+        title: Text(l10n.authSignOutTitle),
+        content: Text(l10n.authSignOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('auth.cancel')),
+            child: Text(l10n.authCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('profile.signOut'),
-                style: const TextStyle(color: AppColors.error)),
+            child: Text(
+              l10n.profileSignOut,
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -110,22 +112,24 @@ class ProfileTab extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
+  Future<void> _confirmDelete(BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
       builder: (ctx) => AlertDialog(
-        title: Text(tr('auth.deleteTitle')),
-        content: Text(tr('auth.deleteWarning')),
+        title: Text(l10n.authDeleteTitle),
+        content: Text(l10n.authDeleteWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr('auth.cancel')),
+            child: Text(l10n.authCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(tr('auth.deleteConfirmBtn'),
-                style: const TextStyle(color: AppColors.error)),
+            child: Text(
+              l10n.authDeleteConfirmBtn,
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -136,14 +140,13 @@ class ProfileTab extends StatelessWidget {
   }
 }
 
-// ─── Вспомогательные виджеты ─────────────────────────────────────
-
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user});
   final User? user;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final photoUrl = user?.photoURL;
     final name = user?.displayName ?? '';
     final email = user?.email ?? '';
@@ -167,7 +170,7 @@ class _ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          name.isNotEmpty ? name : tr('profile.guest'),
+          name.isNotEmpty ? name : l10n.profileGuest,
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,

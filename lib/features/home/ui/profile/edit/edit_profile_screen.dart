@@ -1,30 +1,39 @@
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/services/permission_service.dart';
 import 'package:hiv/features/home/ui/profile/edit/user_repository.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
+import 'package:hiv/l10n/generated/app_localizations.dart';
+
+// Расширение для удобного доступа к локализации
+extension _ContextL10n on BuildContext {
+  AppLocalizations get l10n => AppLocalizations.of(this);
+}
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
+
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _nameCtrl;
   final _currPassCtrl = TextEditingController();
-  final _newPassCtrl  = TextEditingController();
+  final _newPassCtrl = TextEditingController();
   final _confPassCtrl = TextEditingController();
 
   bool _obscureCurr = true;
-  bool _obscureNew  = true;
+  bool _obscureNew = true;
   bool _obscureConf = true;
+
   File? _pickedImage;
-  bool _saving         = false;
+  bool _saving = false;
   bool _uploadingPhoto = false;
 
   User? get _user => FirebaseAuth.instance.currentUser;
@@ -50,42 +59,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final granted = await PermissionService.requestGallery();
     if (!granted) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(tr('edit.noGalleryAccess')),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
+        _showSnackBar(context.l10n.editTitle, isError: true);
+        AppColors.error;
+        SnackBarBehavior.floating;
       }
       return;
     }
+
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 512,
       maxHeight: 512,
       imageQuality: 85,
     );
+
     if (picked == null) return;
     setState(() => _pickedImage = File(picked.path));
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _saving = true);
+    final l10n = context.l10n;
+
     try {
+      // 1. Загрузка фото, если оно выбрано
       if (_pickedImage != null) {
         setState(() => _uploadingPhoto = true);
         await _repo.uploadPhoto(_pickedImage!);
-        await FirebaseAuth.instance.currentUser?.reload();
-        if (mounted) {
-          setState(() => _uploadingPhoto = false);
-        }
+        await _user?.reload();
+        if (mounted) setState(() => _uploadingPhoto = false);
       }
 
+      // 2. Обновление имени
       final newName = _nameCtrl.text.trim();
       if (newName != (_user?.displayName ?? '').trim()) {
         await _repo.updateDisplayName(newName);
       }
 
+      // 3. Обновление пароля
       if (_newPassCtrl.text.isNotEmpty) {
         await _repo.updatePassword(
           currentPassword: _currPassCtrl.text,
@@ -94,29 +107,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(tr('edit.success')),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ));
+        _showSnackBar(l10n.editSuccess);
+        AppColors.primary;
+        SnackBarBehavior.floating;
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_mapError(e.code)),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
+      if (mounted) _showSnackBar(_mapError(e.code, l10n), isError: true);
+      AppColors.error;
+      SnackBarBehavior.floating;
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(tr('edit.errorSave')),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
+      if (mounted) _showSnackBar(l10n.editErrorSave, isError: true);
+      AppColors.error;
+      SnackBarBehavior.floating;
     } finally {
       if (mounted) {
         setState(() {
@@ -126,26 +129,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     }
   }
-
-  String _mapError(String code) => switch (code) {
-        'wrong-password'        => tr('edit.wrongPassword'),
-        'invalid-credential'    => tr('edit.wrongPassword'),
-        'weak-password'         => tr('edit.weakPassword'),
-        'requires-recent-login' => tr('edit.recentLogin'),
-        _                       => '${tr("common.error")}: $code',
-      };
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColors.error : AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+  String _mapError(String code, AppLocalizations l10n) => switch (code) {
+    'wrong-password' || 'invalid-credential' => l10n.editWrongPassword,
+    'weak-password' => l10n.editWeakPassword,
+    'requires-recent-login' => l10n.editRecentLogin,
+    _ => '${l10n.commonError}: $code',
+  };
 
   @override
   Widget build(BuildContext context) {
-    // ignore: unused_local_variable
-    final _ = Localizations.localeOf(context); // истинный InheritedWidget — триггерит rebuild
-
+    final l10n = context.l10n;
     final photoUrl = _user?.photoURL;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(tr('edit.title')),
+        title: Text(l10n.editTitle),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -163,6 +171,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 24),
+
+                      // Секция аватара
                       Center(
                         child: Stack(
                           children: [
@@ -173,7 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ? FileImage(_pickedImage!)
                                   : (photoUrl != null
                                       ? NetworkImage(photoUrl) as ImageProvider
-                                      : null),
+                                        : null),
                               child: (_pickedImage == null && photoUrl == null)
                                   ? Text(
                                       ((_user?.displayName ?? '').trim().isEmpty
@@ -196,7 +206,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ),
                                   child: const Center(
                                     child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2),
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -212,7 +224,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     color: AppColors.primary,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white, width: 2),
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
                                   ),
                                   child: const Icon(
                                     Icons.photo_library_outlined,
@@ -225,8 +239,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ],
                         ),
                       ),
+
                       const SizedBox(height: 28),
-                      _Label(text: tr('edit.nameLabel')),
+                      _Label(text: l10n.editNameLabel),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameCtrl,
@@ -234,25 +249,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         textCapitalization: TextCapitalization.words,
                         validator: AppValidators.name,
                         style: const TextStyle(
-                            color: AppColors.textPrimary, fontSize: 15),
-                        decoration: _dec(
-                            tr('edit.namePlaceholder'),
-                            Icons.person_outline_rounded),
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                        ),
+                        decoration: _inputDec(
+                          l10n.editNamePlaceholder,
+                          Icons.person_outline_rounded,
+                        ),
                       ),
+
                       if (_hasEmail) ...[
                         const SizedBox(height: 24),
-                        _Label(text: tr('edit.changePasswordLabel')),
+                        _Label(text: l10n.editChangePasswordLabel),
                         const SizedBox(height: 8),
                         _PassField(
                           controller: _currPassCtrl,
-                          hint: tr('edit.currentPassword'),
+                          hint: l10n.editCurrentPassword,
                           obscure: _obscureCurr,
                           onToggle: () =>
                               setState(() => _obscureCurr = !_obscureCurr),
                           validator: (v) {
                             if (_newPassCtrl.text.isEmpty) return null;
                             if (v == null || v.isEmpty) {
-                              return tr('edit.currentPassword');
+                              return l10n.editCurrentPassword;
                             }
                             return null;
                           },
@@ -260,7 +279,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(height: 10),
                         _PassField(
                           controller: _newPassCtrl,
-                          hint: tr('edit.newPassword'),
+                          hint: l10n.editNewPassword,
                           obscure: _obscureNew,
                           onToggle: () =>
                               setState(() => _obscureNew = !_obscureNew),
@@ -272,14 +291,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(height: 10),
                         _PassField(
                           controller: _confPassCtrl,
-                          hint: tr('edit.confirmPassword'),
+                          hint: l10n.editConfirmPassword,
                           obscure: _obscureConf,
                           onToggle: () =>
                               setState(() => _obscureConf = !_obscureConf),
                           validator: (v) {
                             if (_newPassCtrl.text.isEmpty) return null;
                             return AppValidators.confirmPassword(
-                                v, _newPassCtrl.text);
+                              v,
+                              _newPassCtrl.text,
+                            );
                           },
                         ),
                       ],
@@ -288,6 +309,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
+
+              // Кнопка сохранения
               Padding(
                 padding: const EdgeInsets.fromLTRB(28, 8, 28, 20),
                 child: ElevatedButton(
@@ -297,9 +320,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2.5),
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
                         )
-                      : Text(tr('common.save')),
+                      : Text(l10n.commonSave),
                 ),
               ),
             ],
@@ -309,28 +334,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  InputDecoration _dec(String hint, IconData icon) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textHint),
-        prefixIcon: Icon(icon, color: AppColors.textHint, size: 20),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: AppColors.primary, width: 2)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.error)),
-      );
+  InputDecoration _inputDec(String hint, IconData icon) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: AppColors.textHint),
+    prefixIcon: Icon(icon, color: AppColors.textHint, size: 20),
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.divider),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.divider),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
+  );
 }
 
 // ─── Вспомогательные виджеты ─────────────────────────────────────
@@ -341,13 +368,14 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text.toUpperCase(),
-        style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textHint,
-            letterSpacing: 1.2),
-      );
+    text.toUpperCase(),
+    style: const TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textHint,
+      letterSpacing: 1.2,
+    ),
+  );
 }
 
 class _PassField extends StatelessWidget {
@@ -367,42 +395,45 @@ class _PassField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextFormField(
-        controller: controller,
-        obscureText: obscure,
-        validator: validator,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: AppColors.textHint),
-          prefixIcon: const Icon(Icons.lock_outline_rounded,
-              color: AppColors.textHint, size: 20),
-          suffixIcon: IconButton(
-            icon: Icon(
-              obscure
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-            onPressed: onToggle,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.divider)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.divider)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 2)),
-          errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error)),
+    controller: controller,
+    obscureText: obscure,
+    validator: validator,
+    style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: AppColors.textHint),
+      prefixIcon: const Icon(
+        Icons.lock_outline_rounded,
+        color: AppColors.textHint,
+        size: 20,
+      ),
+      suffixIcon: IconButton(
+        icon: Icon(
+          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          color: AppColors.textHint,
+          size: 20,
         ),
-      );
+        onPressed: onToggle,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.divider),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.divider),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error),
+      ),
+    ),
+  );
 }

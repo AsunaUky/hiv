@@ -90,6 +90,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get editTitle => 'Редактировать профиль';
 
   @override
+  String get editNoGalleryAccess => 'Нет доступа к галерее';
+
+  @override
   String get editNameLabel => 'Имя';
 
   @override
@@ -326,7 +329,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get articlesMythsB5Heading =>
-      'Как поддержать человека, открывшего вам свой статус?';
+      '6. Как поддержать человека, открывшего вам свой статус?';
 
   @override
   String get articlesMythsB5Bl0 =>

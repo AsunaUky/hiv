@@ -88,6 +88,9 @@ class AppLocalizationsKk extends AppLocalizations {
   String get editTitle => 'Профильді өзгерту';
 
   @override
+  String get editNoGalleryAccess => 'Галереяға рұқсат жоқ';
+
+  @override
   String get editNameLabel => 'Есім';
 
   @override

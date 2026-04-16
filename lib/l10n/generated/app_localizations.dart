@@ -254,6 +254,12 @@ abstract class AppLocalizations {
   /// **'Редактировать профиль'**
   String get editTitle;
 
+  /// No description provided for @editNoGalleryAccess.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет доступа к галерее'**
+  String get editNoGalleryAccess;
+
   /// No description provided for @editNameLabel.
   ///
   /// In ru, this message translates to:
@@ -647,7 +653,7 @@ abstract class AppLocalizations {
   /// No description provided for @articlesMythsB5Heading.
   ///
   /// In ru, this message translates to:
-  /// **'Как поддержать человека, открывшего вам свой статус?'**
+  /// **'6. Как поддержать человека, открывшего вам свой статус?'**
   String get articlesMythsB5Heading;
 
   /// No description provided for @articlesMythsB5Bl0.
