@@ -65,4 +65,33 @@ class FirestoreService {
       rethrow;
     }
   }
+
+  Future<List<Map<String, dynamic>>> getArticles() async {
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection(CollectionNames.articles)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        AppLogger.warning('Firestore: коллекция статей пуста');
+        return [];
+      }
+
+      final articles = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+
+      AppLogger.info('Firestore: загружено ${articles.length} статей');
+      return articles;
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Firestore: ошибка получения статей',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
 }

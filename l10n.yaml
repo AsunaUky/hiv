@@ -15,8 +15,5 @@ strict-metadata: false # Отключает обязательное описа�
 # Имя сгенерированного класса.
 output-class: AppLocalizations
 
-# Папка для сгенерированных .dart файлов.
-output-dir: lib/l10n/generated
-
 # Не-nullable геттер: AppLocalizations.of(context) вместо AppLocalizations.of(context)!
 nullable-getter: false
