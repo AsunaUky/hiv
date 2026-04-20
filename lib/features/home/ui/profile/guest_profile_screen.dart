@@ -47,16 +47,16 @@ class GuestProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // Секция настроек
-            _buildSectionTitle(l10n.profileEdit), 
+            _buildSectionTitle(l10n.profileLanguage),
             const SizedBox(height: 12),
             const _LanguageSelector(),
 
             const SizedBox(height: 40),
 
-            // Кнопка входа
+            // FIX: context.push сохраняет стек → кнопка «назад» работает.
+            // context.go очищал стек → кнопки назад не было.
             ElevatedButton(
-              onPressed: () => context.go(RouteNames.login),
+              onPressed: () => context.push(RouteNames.login),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -106,12 +106,14 @@ class _LanguageSelector extends StatelessWidget {
         _LangButton(
           label: 'Русский',
           selected: !isKazakh,
-          onTap: () => context.read<LocaleCubit>().setLocale(const Locale('ru')),
+          onTap: () =>
+              context.read<LocaleCubit>().setLocale(const Locale('ru')),
         ),
         _LangButton(
           label: 'Қазақша',
           selected: isKazakh,
-          onTap: () => context.read<LocaleCubit>().setLocale(const Locale('kk')),
+          onTap: () =>
+              context.read<LocaleCubit>().setLocale(const Locale('kk')),
         ),
       ],
     );

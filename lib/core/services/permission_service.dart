@@ -2,12 +2,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:hiv/core/utils/logger.dart';
 
 /// Сервис запроса разрешений.
-///
-/// Вызывается один раз из [SplashScreen.initState].
 class PermissionService {
   const PermissionService._();
 
-  /// Запрашивает разрешение на геолокацию для [MapScreen].
+  // ── Геолокация ────────────────────────────────────────────────
+
+  /// Запрашивает разрешение на геолокацию.
+  /// Вызывать из SplashScreen.initState().
   static Future<void> requestLocation() async {
     try {
       final status = await Permission.locationWhenInUse.status;
@@ -17,38 +18,27 @@ class PermissionService {
         return;
       }
       final result = await Permission.locationWhenInUse.request();
-      AppLogger.info('PermissionService: геолокация -> $result');
+      AppLogger.info('PermissionService: геолокация → $result');
     } catch (e, s) {
       AppLogger.error('PermissionService: ошибка геолокации', error: e, stackTrace: s);
     }
   }
 
-  /// Запрашивает разрешение на доступ к галерее для выбора фото профиля.
+  // ── Галерея ───────────────────────────────────────────────────
+
+  /// Текущий статус доступа к галерее — без показа диалога.
   ///
-  /// Android 13+ — [Permission.photos], старше — [Permission.storage].
-  /// iOS — [Permission.photos].
-  static Future<bool> requestGallery() async {
+  /// На Android 13+ image_picker использует системный Photo Picker
+  /// и не требует явного пермишена. Поэтому мы проверяем только
+  /// [isPermanentlyDenied] — только тогда нужно вести в настройки.
+  static Future<PermissionStatus> galleryStatus() async {
     try {
-      final permission = Permission.photos;
-      final status = await permission.status;
-
-      if (status.isGranted || status.isLimited) {
-        AppLogger.info('PermissionService: галерея уже разрешена');
-        return true;
-      }
-      if (status.isPermanentlyDenied) {
-        AppLogger.warning('PermissionService: галерея запрещена навсегда');
-        await openAppSettings();
-        return false;
-      }
-
-      final result = await permission.request();
-      final granted = result.isGranted || result.isLimited;
-      AppLogger.info('PermissionService: галерея -> $result');
-      return granted;
-    } catch (e, s) {
-      AppLogger.error('PermissionService: ошибка галереи', error: e, stackTrace: s);
-      return false;
+      return await Permission.photos.status;
+    } catch (_) {
+      return PermissionStatus.granted; // если API недоступен — разрешаем
     }
   }
+
+  /// Открывает системные настройки приложения.
+  static Future<void> openSettings() => openAppSettings();
 }

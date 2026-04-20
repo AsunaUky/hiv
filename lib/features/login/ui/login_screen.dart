@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +20,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
   bool _obscure    = true;
+
+  // FIX: если текущий пользователь — гость (анонимный),
+  // кнопка «Войти как гость» бессмысленна — скрываем её.
+  bool get _isGuest =>
+      FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
 
   @override
   void dispose() {
@@ -123,30 +129,32 @@ class _LoginScreenState extends State<LoginScreen> {
                               .add(const AuthGoogleRequested()),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      BlocBuilder<AppBloc, AppState>(
-                        builder: (context, state) => OutlinedButton.icon(
-                          onPressed: state is AuthLoading
-                              ? null
-                              : () => context
-                                  .read<AppBloc>()
-                                  .add(const AuthGuestRequested()),
-                          icon: const Icon(
-                              Icons.person_outline_rounded, size: 18),
-                          label: const Text('Войти как гость'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.textSecondary,
-                            side: const BorderSide(color: AppColors.divider),
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      // Кнопка «Войти как гость» скрыта, если пользователь
+                      // уже является гостем — ему она не нужна.
+                      if (!_isGuest) ...[
+                        const SizedBox(height: 10),
+                        BlocBuilder<AppBloc, AppState>(
+                          builder: (context, state) => OutlinedButton.icon(
+                            onPressed: state is AuthLoading
+                                ? null
+                                : () => context
+                                    .read<AppBloc>()
+                                    .add(const AuthGuestRequested()),
+                            icon: const Icon(
+                                Icons.person_outline_rounded, size: 18),
+                            label: const Text('Войти как гость'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary,
+                              side: const BorderSide(color: AppColors.divider),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 16),
-                      // pushReplacement: заменяет вход на регистрацию в стеке.
-                      // Сколько бы раз ни переключались — назад всегда один шаг.
                       AuthBottomLink(
                         text: 'Нет аккаунта?',
                         linkText: 'Зарегистрироваться',
