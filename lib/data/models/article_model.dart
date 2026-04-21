@@ -1,5 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
-
+import 'package:hiv/features/info/domain/article_entity.dart';
 
 /// Блок статьи — data-слой (с сериализацией).
 class ArticleBlockModel extends Equatable {
@@ -88,7 +89,38 @@ class ArticleModel extends Equatable {
           const [],
     );
   }
-
+  factory ArticleModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return ArticleModel(
+      id: doc.id,
+      title: data['title'] as String? ?? '',
+      subtitle: data['subtitle'] as String? ?? '',
+      iconCode: data['iconCode'] as int? ?? 0,
+      blocks:
+          (data['blocks'] as List<dynamic>?)
+              ?.map(
+                (e) => ArticleBlockModel.fromJson(e as Map<String, dynamic>),
+              )
+              .toList() ??
+          const [],
+    );
+  }
+  ArticleEntity toEntity() => ArticleEntity(
+    id: id,
+    title: title,
+    subtitle: subtitle,
+    iconCode: iconCode,
+    blocks: blocks
+        .map(
+          (b) => ArticleBlock(
+            heading: b.heading,
+            paragraphs: b.paragraphs,
+            bullets: b.bullets,
+          ),
+        )
+        .toList(),
+  );
+  
   Map<String, dynamic> toJson() {
     return {
       'id': id,
