@@ -43,7 +43,7 @@ dev_dependencies:
   very_good_analysis: ^10.2.0 #для расширенного статического анализа кода
   flutter_native_splash: ^2.4.7 #для создания нативного сплэш-экрана
   flutter_launcher_icons: ^0.14.4 #для генерации иконок приложения
- 
+
 flutter:
   generate: true 
   assets:
@@ -52,7 +52,7 @@ flutter:
   uses-material-design: true
 
 
-flutter_native_splash: 
+flutter_native_splash:
   color: "#9FFFF9"
   color_dark: "#1A2E2D"
   image: "assets/icons/splash_icon.png"
@@ -71,9 +71,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icons/app_icon.png"
-  adaptive_icon_foreground: "assets/icons/app_icon.png"
+  adaptive_icon_foreground: "assets/icons/app_icon_adaptive_fg.png"
   adaptive_icon_background: "assets/icons/app_icon_adaptive_bg.png"
-  # adaptive_icon_monochrome: "assets/icons/app_icon_adaptive_bg.png"
   remove_alpha_ios: true
   web:
     generate: false

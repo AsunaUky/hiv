@@ -61,11 +61,11 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Иконка приложения из assets
                 Container(
-                  width: 88,
-                  height: 88,
+                  width: 108,
+                  height: 108,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -75,15 +75,17 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.health_and_safety_outlined,
-                    color: Colors.white,
-                    size: 44,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/icons/app_icon.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 28),
                 const Text(
-                  'HIV',             // надо может быть поменять шрифт потом
+                  'HIV',
                   style: TextStyle(
                     fontSize: 46,
                     fontWeight: FontWeight.w800,
