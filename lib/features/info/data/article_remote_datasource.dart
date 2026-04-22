@@ -8,13 +8,13 @@ class ArticleRemoteDataSource {
   ArticleRemoteDataSource(this._firestore);
 
   Future<ArticleEntity> getArticleById(String id) async {
-    final doc = await _firestore.collection('articles').doc(id).get();
+    final doc = await _firestore.collection('Статьи:').doc(id).get();
 
-    if (!doc.exists) throw Exception('Article not found: $id');
-    return ArticleModel.fromFirestore(doc).toEntity(); 
+    if (!doc.exists) throw Exception('Статья не найдена:$id');
+    return ArticleModel.fromFirestore(doc).toEntity();
   }
   Future<List<ArticleEntity>> getAll() async {
-  final snapshot = await _firestore.collection('articles').get();
+  final snapshot = await _firestore.collection('Статьи:').get();
   return snapshot.docs
       .map((doc) => ArticleModel.fromFirestore(doc).toEntity())
       .toList();
