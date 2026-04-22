@@ -9,10 +9,10 @@ class ArticleCubit extends Cubit<ArticleState> {
   final ArticleRepository _repository;
   ArticleCubit(this._repository) : super(ArticleInitial());
 
-  Future<void> loadArticle(String id) async {
+  Future<void> loadArticle(String id, String locale) async {
     emit(ArticleLoading());
     try {
-      final article = await _repository.getArticleById(id);
+      final article = await _repository.getArticleById(id, locale);
       emit(ArticleLoaded(article));
     } catch (e) {
       emit(ArticleError(e.toString()));

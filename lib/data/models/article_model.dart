@@ -2,52 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hiv/features/info/domain/article_entity.dart';
 
-/// Блок статьи — data-слой (с сериализацией).
 class ArticleBlockModel extends Equatable {
-  const ArticleBlockModel({
-    this.heading,
-    this.paragraphs = const [],
-    this.bullets = const [],
-  });
+  const ArticleBlockModel({required this.type, required this.content});
 
-  final String? heading;
-  final List<String> paragraphs;
-  final List<String> bullets;
-
-  // ── JSON ────────────────────────────────────────────────────
+  final String type;
+  final Map<String, String> content;
 
   factory ArticleBlockModel.fromJson(Map<String, dynamic> json) {
     return ArticleBlockModel(
-      heading: json['heading'] as String?,
-      paragraphs:
-          (json['paragraphs'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      bullets:
-          (json['bullets'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
+      type: json['type'] as String,
+      content: Map<String, String>.from(json['content'] as Map),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (heading != null) 'heading': heading,
-      'paragraphs': paragraphs,
-      'bullets': bullets,
-    };
-  }
-
   @override
-  List<Object?> get props => [heading, paragraphs, bullets];
+  List<Object?> get props => [type, content];
 }
 
-/// Модель статьи информационного раздела.
-///
-/// Расширяет [Equatable] для корректного сравнения в BLoC.
-/// Содержит фабрики для JSON (Firestore) и маппинг в/из [ArticleEntity].
 class ArticleModel extends Equatable {
   const ArticleModel({
     required this.id,
@@ -57,78 +28,80 @@ class ArticleModel extends Equatable {
     required this.blocks,
   });
 
-  /// Уникальный идентификатор статьи.
   final String id;
-
-  /// Заголовок карточки и AppBar.
-  final String title;
-
-  /// Краткое описание для карточки (1–2 предложения).
-  final String subtitle;
-
-  /// Код иконки Material (IconData.codePoint).
-  final int iconCode;
-
-  /// Структурированное содержимое статьи.
+  final Map<String, String> title;
+  final Map<String, String> subtitle;
+  final String iconCode;  
   final List<ArticleBlockModel> blocks;
 
-  // ── JSON ────────────────────────────────────────────────────
-
-  factory ArticleModel.fromJson(Map<String, dynamic> json) {
-    return ArticleModel(
-      id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      subtitle: json['subtitle'] as String? ?? '',
-      iconCode: json['iconCode'] as int? ?? 0,
-      blocks:
-          (json['blocks'] as List<dynamic>?)
-              ?.map(
-                (e) => ArticleBlockModel.fromJson(e as Map<String, dynamic>),
-              )
-              .toList() ??
-          const [],
-    );
-  }
   factory ArticleModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ArticleModel(
       id: doc.id,
-      title: data['title'] as String? ?? '',
-      subtitle: data['subtitle'] as String? ?? '',
-      iconCode: data['iconCode'] as int? ?? 0,
-      blocks:
-          (data['blocks'] as List<dynamic>?)
-              ?.map(
-                (e) => ArticleBlockModel.fromJson(e as Map<String, dynamic>),
-              )
+      title: Map<String, String>.from(data['title'] as Map),
+      subtitle: Map<String, String>.from(data['subtitle'] as Map),
+      iconCode: data['iconCode'] as String? ?? 'info',
+      blocks: (data['blocks'] as List<dynamic>?)
+              ?.map((e) => ArticleBlockModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
     );
   }
-  ArticleEntity toEntity() => ArticleEntity(
-    id: id,
-    title: title,
-    subtitle: subtitle,
-    iconCode: iconCode,
-    blocks: blocks
-        .map(
-          (b) => ArticleBlock(
-            heading: b.heading,
-            paragraphs: b.paragraphs,
-            bullets: b.bullets,
-          ),
-        )
-        .toList(),
-  );
-  
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'subtitle': subtitle,
-      'iconCode': iconCode,
-      'blocks': blocks.map((b) => b.toJson()).toList(),
+
+  ArticleEntity toEntity(String locale) {
+    return ArticleEntity(
+      id: id,
+      title: title[locale] ?? title['ru'] ?? '',
+      subtitle: subtitle[locale] ?? subtitle['ru'] ?? '',
+      iconCode: _iconNameToCode(iconCode),
+      blocks: _buildBlocks(locale),
+    );
+  }
+
+  List<ArticleBlock> _buildBlocks(String locale) {
+    final result = <ArticleBlock>[];
+    String? currentHeading;
+    final paragraphs = <String>[];
+
+    for (final block in blocks) {
+      final text = block.content[locale] ?? block.content['ru'] ?? '';
+      if (block.type == 'heading') {
+        // Сохраняем предыдущий блок если есть
+        if (currentHeading != null || paragraphs.isNotEmpty) {
+          result.add(ArticleBlock(
+            heading: currentHeading,
+            paragraphs: List.from(paragraphs),
+          ));
+          paragraphs.clear();
+        }
+        currentHeading = text;
+      } else if (block.type == 'paragraph') {
+        paragraphs.add(text);
+      }
+    }
+
+    // Последний блок
+    if (currentHeading != null || paragraphs.isNotEmpty) {
+      result.add(ArticleBlock(
+        heading: currentHeading,
+        paragraphs: List.from(paragraphs),
+      ));
+    }
+
+    return result;
+  }
+
+  // Строковое имя иконки → codePoint
+  static int _iconNameToCode(String name) {
+    const map = {
+      'science': 0xe4c8,
+      'health_and_safety': 0xe1d5,
+      'psychology': 0xea4a,
+      'info': 0xe88e,
+      'shield': 0xe9e0,
+      'favorite': 0xe87d,
     };
+    return map[name] ?? 0xe88e;
   }
 
   @override

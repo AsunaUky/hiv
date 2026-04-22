@@ -1,23 +1,38 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
-import 'package:hiv/features/info/data/articles_local_datasource.dart';
+import 'package:hiv/features/info/data/article_remote_datasource.dart';
+import 'package:hiv/features/info/data/repositories/article_repository_impl.dart';
 import 'package:hiv/features/info/domain/article_entity.dart';
-import 'package:hiv/l10n/generated/app_localizations.dart';
+import 'package:hiv/features/info/ui/cubit/articles_list_cubit.dart';
 
-/// Вкладка «Информация» — список из трёх статей.
-///
-/// Находится внутри ShellRoute → BottomNavigationBar виден.
 class InfoListScreen extends StatelessWidget {
   const InfoListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final articles = ArticlesLocalDatasource.instance.getAll(l);
+    final locale = context.read<LocaleCubit>().state.languageCode;
+    return BlocProvider(
+      create: (_) => ArticlesListCubit(
+        ArticleRepositoryImpl(
+          ArticleRemoteDataSource(FirebaseFirestore.instance),
+        ),
+      )..loadAll(locale),
+      child: const _InfoListView(),
+    );
+  }
+}
 
+class _InfoListView extends StatelessWidget {
+  const _InfoListView();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -32,11 +47,25 @@ class InfoListScreen extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                itemCount: articles.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, i) => _ArticleCard(article: articles[i]),
+              child: BlocBuilder<ArticlesListCubit, ArticlesListState>(
+                builder: (context, state) {
+                  if (state is ArticlesListLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is ArticlesListError) {
+                    return Center(child: Text(state.message));
+                  }
+                  if (state is ArticlesListLoaded) {
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      itemCount: state.articles.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (_, i) =>
+                          _ArticleCard(article: state.articles[i]),
+                    );
+                  }
+                  return const SizedBox();
+                },
               ),
             ),
           ],
@@ -45,8 +74,6 @@ class InfoListScreen extends StatelessWidget {
     );
   }
 }
-
-// ─── Карточка статьи ─────────────────────────────────────────────
 
 class _ArticleCard extends StatelessWidget {
   const _ArticleCard({required this.article});
