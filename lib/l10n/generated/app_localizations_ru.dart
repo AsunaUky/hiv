@@ -127,4 +127,29 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get infoTitle => 'Информация';
+
+  @override
+  String get testTitle => 'Тест оценки риска';
+
+  @override
+  String get testDescription =>
+      'Ответьте на 10 вопросов — система оценит уровень риска и даст персональную рекомендацию.';
+
+  @override
+  String get testPrivacyNote =>
+      'Все ответы анонимны и конфиденциальны. Данные не сохраняются.';
+
+  @override
+  String get testStartButton => 'Пройти тест';
+
+  @override
+  String get testFinishButton => 'Завершить тест';
+
+  @override
+  String testHistoryTitle(int count) {
+    return 'История прохождений ($count)';
+  }
+
+  @override
+  String get testResultRetry => 'Пройти ещё раз';
 }

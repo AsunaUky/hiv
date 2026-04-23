@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/test/ui/cubit/test_cubit.dart';
@@ -16,7 +17,6 @@ class TestResultScreen extends StatelessWidget {
       'moderate' => Colors.orange,
       _ => Colors.green,
     };
-
     final icon = switch (completed.riskLevel) {
       'high' => Icons.warning_rounded,
       'moderate' => Icons.info_rounded,
@@ -77,7 +77,7 @@ class TestResultScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => context.go(RouteNames.test),
-                  child: const Text('Пройти ещё раз'),
+                  child: Text(context.locale.testResultRetry), // ← локализация
                 ),
               ),
             ],

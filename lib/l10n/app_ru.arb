@@ -77,6 +77,24 @@
   "editRecentLogin": "Выйдите и войдите снова",
   "@editRecentLogin": {},
   "infoTitle": "Информация",
-  "@infoTitle": {}
+  "@infoTitle": {},
 
+  "testTitle": "Тест оценки риска",
+  "@testTitle": {},
+  "testDescription": "Ответьте на 10 вопросов — система оценит уровень риска и даст персональную рекомендацию.",
+  "@testDescription": {},
+  "testPrivacyNote": "Все ответы анонимны и конфиденциальны. Данные не сохраняются.",
+  "@testPrivacyNote": {},
+  "testStartButton": "Пройти тест",
+  "@testStartButton": {},
+  "testFinishButton": "Завершить тест",
+  "@testFinishButton": {},
+  "testHistoryTitle": "История прохождений ({count})",
+  "@testHistoryTitle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "testResultRetry": "Пройти ещё раз",
+  "@testResultRetry": {}
 }

@@ -125,4 +125,29 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get infoTitle => 'Ақпарат';
+
+  @override
+  String get testTitle => 'Тәуекел бағалау тесті';
+
+  @override
+  String get testDescription =>
+      '10 сұраққа жауап беріңіз — жүйе тәуекел деңгейін бағалап, жеке ұсыныс береді.';
+
+  @override
+  String get testPrivacyNote =>
+      'Барлық жауаптар анонимді және құпия. Деректер сақталмайды.';
+
+  @override
+  String get testStartButton => 'Тест тапсыру';
+
+  @override
+  String get testFinishButton => 'Тестті аяқтау';
+
+  @override
+  String testHistoryTitle(int count) {
+    return 'Өту тарихы ($count)';
+  }
+
+  @override
+  String get testResultRetry => 'Қайта тапсыру';
 }

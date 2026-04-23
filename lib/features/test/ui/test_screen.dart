@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
+import 'package:hiv/core/locale/locale_ext.dart';
+import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/info/domain/test_entity.dart';
 import 'package:hiv/features/test/data/repositories/test_repository_impl.dart';
@@ -58,16 +60,42 @@ class _TestView extends StatelessWidget {
   }
 }
 
-// ─── Вводный экран ───────────────────────────────────────────────
-
-class _TestIntroPage extends StatelessWidget {
+class _TestIntroPage extends StatefulWidget {
   const _TestIntroPage({required this.onStart});
   final VoidCallback onStart;
 
   @override
+  State<_TestIntroPage> createState() => _TestIntroPageState();
+}
+
+class _TestIntroPageState extends State<_TestIntroPage> {
+  List<Map<String, dynamic>> _history = [];
+  bool _historyExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final history = await context.read<TestCubit>().loadHistory();
+    if (mounted) setState(() => _history = history);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l = context.locale;
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => context.go(RouteNames.main),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -91,15 +119,9 @@ class _TestIntroPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                'Тест оценки риска',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              Text(l.testTitle, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 12),
-              Text(
-                'Ответьте на 10 вопросов о вашем поведении — система оценит уровень риска и даст персональную рекомендацию.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text(l.testDescription, style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -109,27 +131,68 @@ class _TestIntroPage extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.lock_outline,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
+                    Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Все ответы анонимны и конфиденциальны. Данные не сохраняются.',
+                        l.testPrivacyNote,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                   ],
                 ),
               ),
+
+              if (_history.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                GestureDetector(
+                  onTap: () => setState(() => _historyExpanded = !_historyExpanded),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l.testHistoryTitle(_history.length), // ← с параметром
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        AnimatedRotation(
+                          turns: _historyExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 250),
+                          child: Icon(Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.textHint),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: _historyExpanded
+                      ? Column(
+                          children: _history.map((e) => _HistoryItem(entry: e)).toList(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+
               const Spacer(),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: onStart,
-                  child: const Text('Пройти тест'),
+                  onPressed: widget.onStart,
+                  child: Text(l.testStartButton),
                 ),
               ),
             ],
@@ -140,7 +203,59 @@ class _TestIntroPage extends StatelessWidget {
   }
 }
 
-// ─── Экран с вопросами ───────────────────────────────────────────
+class _HistoryItem extends StatelessWidget {
+  const _HistoryItem({required this.entry});
+  final Map<String, dynamic> entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateTime.parse(entry['date'] as String);
+    final riskLevel = entry['riskLevel'] as String;
+    final description = entry['description'] as String;
+
+    final color = switch (riskLevel) {
+      'high' => Colors.red,
+      'moderate' => Colors.orange,
+      _ => Colors.green,
+    };
+    final icon = switch (riskLevel) {
+      'high' => Icons.warning_rounded,
+      'moderate' => Icons.info_rounded,
+      _ => Icons.check_circle_rounded,
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(description,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, color: color, fontSize: 14)),
+                const SizedBox(height: 2),
+                Text(
+                  '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _TestQuestionsPage extends StatelessWidget {
   const _TestQuestionsPage({required this.state});
@@ -153,6 +268,10 @@ class _TestQuestionsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => context.read<TestCubit>().restart(),
+        ),
         title: Text(
           '${state.answeredCount} / ${state.totalQuestions}',
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
@@ -161,7 +280,6 @@ class _TestQuestionsPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Прогресс-бар
           LinearProgressIndicator(
             value: state.totalQuestions > 0
                 ? state.answeredCount / state.totalQuestions
@@ -187,7 +305,7 @@ class _TestQuestionsPage extends StatelessWidget {
           onPressed: state.allAnswered
               ? () => context.read<TestCubit>().finish()
               : null,
-          child: const Text('Завершить тест'),
+          child: Text(context.locale.testFinishButton),
         ),
       ),
     );
@@ -209,14 +327,13 @@ class _BlockSection extends StatelessWidget {
           child: Text(
             block.title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-            ),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
           ),
         ),
         ...block.questions.map(
-          (q) =>
-              _QuestionCard(question: q, selectedIndex: selectedIndexes[q.id]),
+          (q) => _QuestionCard(question: q, selectedIndex: selectedIndexes[q.id]),
         ),
       ],
     );
@@ -226,7 +343,7 @@ class _BlockSection extends StatelessWidget {
 class _QuestionCard extends StatelessWidget {
   const _QuestionCard({required this.question, required this.selectedIndex});
   final TestQuestion question;
-  final int? selectedIndex; // ← индекс выбранной опции
+  final int? selectedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -240,24 +357,21 @@ class _QuestionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            question.text,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          Text(question.text,
+              style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary)),
           const SizedBox(height: 12),
           ...question.options.asMap().entries.map(
             (entry) => _OptionTile(
               option: entry.value,
-              isSelected: selectedIndex == entry.key, // ← по индексу
+              isSelected: selectedIndex == entry.key,
               onTap: () => context.read<TestCubit>().answer(
-                question.id,
-                entry.key, // ← индекс
-                entry.value.risk,
-              ),
+                    question.id,
+                    entry.key,
+                    entry.value.risk,
+                  ),
             ),
           ),
         ],
@@ -289,8 +403,7 @@ class _OptionTile extends StatelessWidget {
               : AppColors.background,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-          ),
+              color: isSelected ? AppColors.primary : Colors.transparent),
         ),
         child: Row(
           children: [
@@ -305,9 +418,7 @@ class _OptionTile extends StatelessWidget {
                 option.text,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                  color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
                 ),
               ),
             ),

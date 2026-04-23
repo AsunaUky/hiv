@@ -38,6 +38,20 @@
   "editWrongPassword": "Ағымдағы құпия сөз қате",
   "editWeakPassword": "Құпия сөз тым қарапайым",
   "editRecentLogin": "Шығып, қайта кіріңіз",
-  "infoTitle": "Ақпарат"
-  
+  "infoTitle": "Ақпарат",
+
+
+  "testTitle": "Тәуекел бағалау тесті",
+  "testDescription": "10 сұраққа жауап беріңіз — жүйе тәуекел деңгейін бағалап, жеке ұсыныс береді.",
+  "testPrivacyNote": "Барлық жауаптар анонимді және құпия. Деректер сақталмайды.",
+  "testStartButton": "Тест тапсыру",
+  "testFinishButton": "Тестті аяқтау",
+  "testHistoryTitle": "Өту тарихы ({count})",
+  "@testHistoryTitle": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "testResultRetry": "Қайта тапсыру"
+
 }

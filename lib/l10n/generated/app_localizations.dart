@@ -331,6 +331,48 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Информация'**
   String get infoTitle;
+
+  /// No description provided for @testTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тест оценки риска'**
+  String get testTitle;
+
+  /// No description provided for @testDescription.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ответьте на 10 вопросов — система оценит уровень риска и даст персональную рекомендацию.'**
+  String get testDescription;
+
+  /// No description provided for @testPrivacyNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все ответы анонимны и конфиденциальны. Данные не сохраняются.'**
+  String get testPrivacyNote;
+
+  /// No description provided for @testStartButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пройти тест'**
+  String get testStartButton;
+
+  /// No description provided for @testFinishButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершить тест'**
+  String get testFinishButton;
+
+  /// No description provided for @testHistoryTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'История прохождений ({count})'**
+  String testHistoryTitle(int count);
+
+  /// No description provided for @testResultRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пройти ещё раз'**
+  String get testResultRetry;
 }
 
 class _AppLocalizationsDelegate
