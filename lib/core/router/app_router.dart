@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/features/home/ui/map_screen.dart';
 import 'package:hiv/features/home/ui/profile/edit/edit_profile_screen.dart';
 import 'package:hiv/features/home/ui/profile/profile_tab.dart';
-import 'package:hiv/features/home/ui/test/test_screen.dart';
+import 'package:hiv/features/test/ui/cubit/test_cubit.dart';
+import 'package:hiv/features/test/ui/test_result_screen.dart';
+import 'package:hiv/features/test/ui/test_screen.dart';
 import 'package:hiv/features/info/domain/article_entity.dart';
 import 'package:hiv/features/info/ui/info_article_screen.dart';
 import 'package:hiv/features/info/ui/info_list_screen.dart';
@@ -65,9 +67,10 @@ class AppRouter {
         GoRoute(
           name: RouteNames.testResultName,
           path: RouteNames.testResult,
-          builder: (_, _) => const Scaffold(
-            body: Center(child: Text('Результат теста')),
-          ),
+          builder: (_, state) {
+            final completed = state.extra as TestCompleted;
+            return TestResultScreen(completed: completed);
+          },
         ),
 
         // Статья — вне Shell (BottomNav скрыт), данные через extra

@@ -10,5 +10,7 @@ void main() async {
     await dotenv.load();
   } catch (_) {}
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // await HIVTestSeeder.seedDatabase();
   runApp(const HivApp());
 }

@@ -1,0 +1,17 @@
+import 'package:hiv/features/info/domain/repositories/test_repository.dart';
+import 'package:hiv/features/info/domain/test_entity.dart';
+import 'package:hiv/features/test/data/test_remote_datasource.dart';
+
+
+class TestRepositoryImpl implements TestRepository {
+  final TestRemoteDataSource _dataSource;
+  TestRepositoryImpl(this._dataSource);
+
+  @override
+  Future<List<TestBlock>> getBlocks(String locale) =>
+      _dataSource.getBlocks(locale);
+
+  @override
+  Future<TestResultsLogic> getResultsLogic(String locale) =>
+      _dataSource.getResultsLogic(locale);
+}
