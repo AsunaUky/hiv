@@ -101,13 +101,10 @@ class ArticleModel extends Equatable {
   // Строковое имя иконки → codePoint
   static int _iconNameToCode(String name) {
     const map = {
-      'medication': 0xf05e0,
-      'biotech': 0xea3a,
-      'verified': 0xe699,
-      'quiz': 0xf042f,
-      'info': 0xe88e,
-      'shield': 0xe9e0,
-      'favorite': 0xe87d,
+      'volunteer_activism': 0xea70,
+      'biotech': 0xea3a, // это для что такое вич
+      'verified': 0xe699, // это для мифов и реальности
+
     };
     return map[name] ?? 0xe88e;
   }
