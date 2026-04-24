@@ -373,6 +373,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Пройти ещё раз'**
   String get testResultRetry;
+
+  /// No description provided for @testRiskHigh.
+  ///
+  /// In ru, this message translates to:
+  /// **'Высокий риск'**
+  String get testRiskHigh;
+
+  /// No description provided for @testRiskModerate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Умеренный риск'**
+  String get testRiskModerate;
+
+  /// No description provided for @testRiskMinimal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Минимальный риск'**
+  String get testRiskMinimal;
 }
 
 class _AppLocalizationsDelegate

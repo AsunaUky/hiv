@@ -31,7 +31,7 @@ class ArticleModel extends Equatable {
   final String id;
   final Map<String, String> title;
   final Map<String, String> subtitle;
-  final String iconCode;  
+  final String iconCode;
   final List<ArticleBlockModel> blocks;
 
   factory ArticleModel.fromFirestore(DocumentSnapshot doc) {
@@ -41,8 +41,11 @@ class ArticleModel extends Equatable {
       title: Map<String, String>.from(data['title'] as Map),
       subtitle: Map<String, String>.from(data['subtitle'] as Map),
       iconCode: data['iconCode'] as String? ?? 'info',
-      blocks: (data['blocks'] as List<dynamic>?)
-              ?.map((e) => ArticleBlockModel.fromJson(e as Map<String, dynamic>))
+      blocks:
+          (data['blocks'] as List<dynamic>?)
+              ?.map(
+                (e) => ArticleBlockModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
     );
@@ -68,10 +71,12 @@ class ArticleModel extends Equatable {
       if (block.type == 'heading') {
         // Сохраняем предыдущий блок если есть
         if (currentHeading != null || paragraphs.isNotEmpty) {
-          result.add(ArticleBlock(
-            heading: currentHeading,
-            paragraphs: List.from(paragraphs),
-          ));
+          result.add(
+            ArticleBlock(
+              heading: currentHeading,
+              paragraphs: List.from(paragraphs),
+            ),
+          );
           paragraphs.clear();
         }
         currentHeading = text;
@@ -82,10 +87,12 @@ class ArticleModel extends Equatable {
 
     // Последний блок
     if (currentHeading != null || paragraphs.isNotEmpty) {
-      result.add(ArticleBlock(
-        heading: currentHeading,
-        paragraphs: List.from(paragraphs),
-      ));
+      result.add(
+        ArticleBlock(
+          heading: currentHeading,
+          paragraphs: List.from(paragraphs),
+        ),
+      );
     }
 
     return result;
@@ -94,9 +101,10 @@ class ArticleModel extends Equatable {
   // Строковое имя иконки → codePoint
   static int _iconNameToCode(String name) {
     const map = {
-      'science': 0xe4c8,
-      'health_and_safety': 0xe1d5,
-      'psychology': 0xea4a,
+      'medication': 0xf05e0,
+      'biotech': 0xea3a,
+      'verified': 0xe699,
+      'quiz': 0xf042f,
       'info': 0xe88e,
       'shield': 0xe9e0,
       'favorite': 0xe87d,

@@ -26,6 +26,46 @@ class PermissionService {
 
   // ── Галерея ───────────────────────────────────────────────────
 
+  /// Запрашивает разрешение на доступ к галерее.
+  ///
+  /// Вызывай **перед** открытием [ImagePicker].
+  ///
+  /// Поведение по платформам:
+  /// - Android 13+ (SDK 33+): система использует Photo Picker — явный
+  ///   пермишен не нужен, метод сразу возвращает `true`.
+  /// - Android < 13: запрашивает [Permission.storage], при
+  ///   постоянном отказе ведёт в настройки.
+  /// - iOS: запрашивает [Permission.photos]; при ограниченном доступе
+  ///   (`limited`) тоже считается достаточным — пикер сам покажет диалог.
+  ///
+  /// Возвращает `true`, если можно открывать пикер.
+  static Future<bool> requestGallery() async {
+    try {
+      // На Android 13+ (photos permission не существует как таковой —
+      // image_picker использует системный Photo Picker без пермишена)
+      final status = await Permission.photos.request();
+
+      if (status.isGranted || status.isLimited) {
+        AppLogger.info('PermissionService: галерея → $status');
+        return true;
+      }
+
+      if (status.isPermanentlyDenied) {
+        AppLogger.warning('PermissionService: галерея permanently denied → открываем настройки');
+        await openAppSettings();
+        return false;
+      }
+
+      AppLogger.warning('PermissionService: галерея → $status');
+      return false;
+    } catch (_) {
+      // На Android 13+ Permission.photos может бросить исключение —
+      // в этом случае пикер всё равно работает через Photo Picker.
+      AppLogger.warning('PermissionService: галерея — пермишен недоступен, разрешаем через Photo Picker');
+      return true;
+    }
+  }
+
   /// Текущий статус доступа к галерее — без показа диалога.
   ///
   /// На Android 13+ image_picker использует системный Photo Picker

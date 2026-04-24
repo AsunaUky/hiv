@@ -152,4 +152,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get testResultRetry => 'Пройти ещё раз';
+
+  @override
+  String get testRiskHigh => 'Высокий риск';
+
+  @override
+  String get testRiskModerate => 'Умеренный риск';
+
+  @override
+  String get testRiskMinimal => 'Минимальный риск';
 }

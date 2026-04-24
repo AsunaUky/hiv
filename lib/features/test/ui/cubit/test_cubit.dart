@@ -35,14 +35,30 @@ class TestCubit extends Cubit<TestState> {
   }
 
   void answer(String questionId, int optionIndex, String risk) {
-    final current = state;
-    if (current is! TestInProgress) return;
-    final updatedAnswers = Map<String, String>.from(current.answers);
-    final updatedIndexes = Map<String, int>.from(current.selectedIndexes);
-    updatedAnswers[questionId] = risk;
-    updatedIndexes[questionId] = optionIndex;
-    emit(current.copyWith(answers: updatedAnswers, selectedIndexes: updatedIndexes));
-  }
+  final current = state;
+  if (current is! TestInProgress) return;
+  final updatedAnswers = Map<String, String>.from(current.answers);
+  final updatedIndexes = Map<String, int>.from(current.selectedIndexes);
+  updatedAnswers[questionId] = risk;
+  updatedIndexes[questionId] = optionIndex;
+
+  final nextIndex = current.currentQuestionIndex + 1;
+
+  emit(current.copyWith(
+    answers: updatedAnswers,
+    selectedIndexes: updatedIndexes,
+    currentQuestionIndex: nextIndex,
+  ));
+}
+
+void previousQuestion() {
+  final current = state;
+  if (current is! TestInProgress) return;
+  if (current.currentQuestionIndex <= 0) return;
+  emit(current.copyWith(
+    currentQuestionIndex: current.currentQuestionIndex - 1,
+  ));
+}
 
   void finish() {
   final current = state;
@@ -67,20 +83,19 @@ class TestCubit extends Cubit<TestState> {
     _ => current.resultsLogic.minimal,
   };
 
-  _saveToHistory(riskLevel, result.description); // ← добавить
+  _saveToHistory(riskLevel);
   emit(TestCompleted(riskLevel: riskLevel, result: result));
 }
 
-Future<void> _saveToHistory(String riskLevel, String description) async {
+Future<void> _saveToHistory(String riskLevel) async {
   final prefs = await SharedPreferences.getInstance();
   final history = prefs.getStringList('test_history') ?? [];
   final entry = jsonEncode({
     'date': DateTime.now().toIso8601String(),
     'riskLevel': riskLevel,
-    'description': description,
   });
-  history.insert(0, entry); // новые сначала
-  if (history.length > 10) history.removeLast(); // максимум 10
+  history.insert(0, entry);
+  if (history.length > 10) history.removeLast();
   await prefs.setStringList('test_history', history);
 }
 

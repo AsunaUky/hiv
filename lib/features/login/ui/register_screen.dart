@@ -15,13 +15,13 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey   = GlobalKey<FormState>();
-  final _nameCtrl  = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
+  final _passCtrl = TextEditingController();
   final _pass2Ctrl = TextEditingController();
-  bool _obscure    = true;
-  bool _obscure2   = true;
+  bool _obscure = true;
+  bool _obscure2 = true;
 
   @override
   void dispose() {
@@ -34,11 +34,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    context.read<AppBloc>().add(AuthRegisterRequested(
-      name:     _nameCtrl.text,
-      email:    _emailCtrl.text,
-      password: _passCtrl.text,
-    ));
+    context.read<AppBloc>().add(
+      AuthRegisterRequested(
+        name: _nameCtrl.text,
+        email: _emailCtrl.text,
+        password: _passCtrl.text,
+      ),
+    );
   }
 
   @override
@@ -47,11 +49,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       listener: (context, state) {
         if (state is AuthSuccess) context.go(RouteNames.main);
         if (state is AuthFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(state.message),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       },
       child: Scaffold(
@@ -61,73 +65,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: AppColors.textPrimary, size: 20),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(RouteNames.login);
-              }
-            },
+            onPressed: () => context.canPop() ? context.pop() : context.go(RouteNames.login),
           ),
         ),
         body: SafeArea(
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Блок с полями теперь в Expanded и центрируется через LayoutBuilder
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _RegHeader(),
-                        const SizedBox(height: 28),
-                        AppTextField(
-                          controller: _nameCtrl,
-                          hint: 'Ваше имя',
-                          prefixIcon: Icons.person_outline_rounded,
-                          validator: AppValidators.name,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center, // Вот тут магия центровки
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 16),
+                            _RegHeader(),
+                            const SizedBox(height: 28),
+                            AppTextField(
+                              controller: _nameCtrl,
+                              hint: 'Ваше имя',
+                              prefixIcon: Icons.person_outline_rounded,
+                              validator: AppValidators.name,
+                            ),
+                            const SizedBox(height: 14),
+                            AppTextField(
+                              controller: _emailCtrl,
+                              hint: 'Email',
+                              prefixIcon: Icons.mail_outline_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: AppValidators.email,
+                            ),
+                            const SizedBox(height: 14),
+                            AppTextField(
+                              controller: _passCtrl,
+                              hint: 'Пароль',
+                              prefixIcon: Icons.lock_outline_rounded,
+                              obscureText: _obscure,
+                              suffixIcon: _EyeToggle(
+                                obscure: _obscure,
+                                onTap: () => setState(() => _obscure = !_obscure),
+                              ),
+                              validator: AppValidators.password,
+                            ),
+                            const SizedBox(height: 14),
+                            AppTextField(
+                              controller: _pass2Ctrl,
+                              hint: 'Повторите пароль',
+                              prefixIcon: Icons.lock_outline_rounded,
+                              obscureText: _obscure2,
+                              suffixIcon: _EyeToggle(
+                                obscure: _obscure2,
+                                onTap: () => setState(() => _obscure2 = !_obscure2),
+                              ),
+                              validator: (v) => AppValidators.confirmPassword(v, _passCtrl.text),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         ),
-                        const SizedBox(height: 14),
-                        AppTextField(
-                          controller: _emailCtrl,
-                          hint: 'Email',
-                          prefixIcon: Icons.mail_outline_rounded,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: AppValidators.email,
-                        ),
-                        const SizedBox(height: 14),
-                        AppTextField(
-                          controller: _passCtrl,
-                          hint: 'Пароль',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscure,
-                          suffixIcon: _EyeToggle(
-                            obscure: _obscure,
-                            onTap: () => setState(() => _obscure = !_obscure),
-                          ),
-                          validator: AppValidators.password,
-                        ),
-                        const SizedBox(height: 14),
-                        AppTextField(
-                          controller: _pass2Ctrl,
-                          hint: 'Повторите пароль',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscure2,
-                          suffixIcon: _EyeToggle(
-                            obscure: _obscure2,
-                            onTap: () => setState(() => _obscure2 = !_obscure2),
-                          ),
-                          validator: (v) =>
-                              AppValidators.confirmPassword(v, _passCtrl.text),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
+                // Нижний блок с кнопками остается прижат к низу
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Column(
@@ -136,20 +142,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       BlocBuilder<AppBloc, AppState>(
                         builder: (_, state) => ElevatedButton(
                           onPressed: state is AuthLoading ? null : _submit,
-                          child: state is AuthLoading
-                              ? const _Spinner()
-                              : const Text('Зарегистрироваться'),
+                          child: state is AuthLoading ? const _Spinner() : const Text('Зарегистрироваться'),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // pushReplacement: заменяет текущий экран в стеке,
-                      // не добавляет новый. Сколько бы раз ни переключались
-                      // login ↔ register — назад всегда один шаг до профиля.
                       AuthBottomLink(
                         text: 'Уже есть аккаунт?',
                         linkText: 'Войти',
-                        onTap: () =>
-                            context.pushReplacement(RouteNames.login),
+                        onTap: () => context.pushReplacement(RouteNames.login),
                       ),
                     ],
                   ),
@@ -169,26 +169,29 @@ class _RegHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            'assets/icons/app_icon.png',
+            width: 44,
+            height: 44,
+            fit: BoxFit.cover,
           ),
-          child: const Icon(Icons.health_and_safety_outlined,
-              color: Colors.white, size: 24),
         ),
         const SizedBox(height: 20),
-        const Text('Регистрация',
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            )),
+        const Text(
+          'Регистрация',
+          style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
         const SizedBox(height: 6),
-        const Text('Создайте аккаунт для доступа ко всем функциям',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+        const Text(
+          'Создайте аккаунт для доступа ко всем функциям',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
       ],
     );
   }

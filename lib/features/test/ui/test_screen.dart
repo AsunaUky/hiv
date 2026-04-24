@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/locale/locale_ext.dart';
-import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/info/domain/test_entity.dart';
 import 'package:hiv/features/test/data/repositories/test_repository_impl.dart';
@@ -91,13 +90,9 @@ class _TestIntroPageState extends State<_TestIntroPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => context.go(RouteNames.main),
-        ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,9 +114,15 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(l.testTitle, style: Theme.of(context).textTheme.headlineMedium),
+              Text(
+                l.testTitle,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 12),
-              Text(l.testDescription, style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                l.testDescription,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -131,7 +132,11 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
+                    Icon(
+                      Icons.lock_outline,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -146,20 +151,30 @@ class _TestIntroPageState extends State<_TestIntroPage> {
               if (_history.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 GestureDetector(
-                  onTap: () => setState(() => _historyExpanded = !_historyExpanded),
+                  onTap: () =>
+                      setState(() => _historyExpanded = !_historyExpanded),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
+                        Icon(
+                          Icons.history_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            l.testHistoryTitle(_history.length), // ← с параметром
+                            l.testHistoryTitle(
+                              _history.length,
+                            ),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
@@ -169,8 +184,10 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                         AnimatedRotation(
                           turns: _historyExpanded ? 0.5 : 0,
                           duration: const Duration(milliseconds: 250),
-                          child: Icon(Icons.keyboard_arrow_down_rounded,
-                              color: AppColors.textHint),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.textHint,
+                          ),
                         ),
                       ],
                     ),
@@ -181,25 +198,28 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                   curve: Curves.easeInOut,
                   child: _historyExpanded
                       ? Column(
-                          children: _history.map((e) => _HistoryItem(entry: e)).toList(),
+                          children: _history
+                              .map((e) => _HistoryItem(entry: e))
+                              .toList(),
                         )
                       : const SizedBox.shrink(),
                 ),
               ],
 
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: widget.onStart,
-                  child: Text(l.testStartButton),
-                ),
-              ),
-            ],
+              const SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: widget.onStart,
+            child: Text(l.testStartButton),
           ),
         ),
-      ),
-    );
+        const SizedBox(height: 16),
+      ],
+    )
+   )
+    )
+  );
   }
 }
 
@@ -211,7 +231,12 @@ class _HistoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateTime.parse(entry['date'] as String);
     final riskLevel = entry['riskLevel'] as String;
-    final description = entry['description'] as String;
+
+    final label = switch (riskLevel) {
+      'high' => context.locale.testRiskHigh,
+      'moderate' => context.locale.testRiskModerate,
+      _ => context.locale.testRiskMinimal,
+    };
 
     final color = switch (riskLevel) {
       'high' => Colors.red,
@@ -240,13 +265,21 @@ class _HistoryItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(description,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, color: color, fontSize: 14)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -263,6 +296,9 @@ class _TestQuestionsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final question = state.currentQuestion;
+    final isLastAnswered = state.allAnswered;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -270,7 +306,14 @@ class _TestQuestionsPage extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => context.read<TestCubit>().restart(),
+          onPressed: () {
+            if (state.currentQuestionIndex > 0) {
+              // Шаг назад
+              context.read<TestCubit>().previousQuestion();
+            } else {
+              context.read<TestCubit>().restart();
+            }
+          },
         ),
         title: Text(
           '${state.answeredCount} / ${state.totalQuestions}',
@@ -280,101 +323,141 @@ class _TestQuestionsPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          LinearProgressIndicator(
-            value: state.totalQuestions > 0
-                ? state.answeredCount / state.totalQuestions
-                : 0,
-            backgroundColor: AppColors.surface,
-            valueColor: AlwaysStoppedAnimation(AppColors.primary),
+          // ─── Анимированный прогресс-бар ───
+          TweenAnimationBuilder<double>(
+            tween: Tween(
+              begin: 0,
+              end: state.totalQuestions > 0
+                  ? state.answeredCount / state.totalQuestions
+                  : 0,
+            ),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            builder: (_, value, _) => LinearProgressIndicator(
+              value: value,
+              backgroundColor: AppColors.surface,
+              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              minHeight: 4,
+            ),
           ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              itemCount: state.blocks.length,
-              itemBuilder: (_, i) => _BlockSection(
-                block: state.blocks[i],
-                selectedIndexes: state.selectedIndexes,
+
+          // ─── Заголовок блока ───
+          if (question != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  state.currentBlockTitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
               ),
             ),
+
+          Expanded(
+            child: isLastAnswered
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: AppColors.primary,
+                            size: 64,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Все вопросы пройдены!',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  context.read<TestCubit>().finish(),
+                              child: Text(context.locale.testFinishButton),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : question != null
+                ? _SingleQuestionView(
+                    question: question,
+                    selectedIndex: state.selectedIndexes[question.id],
+                    questionNumber: state.currentQuestionIndex + 1,
+                  )
+                : const SizedBox(),
           ),
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-        child: ElevatedButton(
-          onPressed: state.allAnswered
-              ? () => context.read<TestCubit>().finish()
-              : null,
-          child: Text(context.locale.testFinishButton),
-        ),
-      ),
     );
   }
 }
 
-class _BlockSection extends StatelessWidget {
-  const _BlockSection({required this.block, required this.selectedIndexes});
-  final TestBlock block;
-  final Map<String, int> selectedIndexes;
+// ─── Один вопрос ─────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Text(
-            block.title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-          ),
-        ),
-        ...block.questions.map(
-          (q) => _QuestionCard(question: q, selectedIndex: selectedIndexes[q.id]),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuestionCard extends StatelessWidget {
-  const _QuestionCard({required this.question, required this.selectedIndex});
+class _SingleQuestionView extends StatelessWidget {
+  const _SingleQuestionView({
+    required this.question,
+    required this.questionNumber,
+    this.selectedIndex,
+  });
   final TestQuestion question;
   final int? selectedIndex;
+  final int questionNumber;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.15, 0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+        child: FadeTransition(opacity: animation, child: child),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(question.text,
-              style: const TextStyle(
-                  fontSize: 15,
+      child: KeyedSubtree(
+        key: ValueKey(question.id),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                question.text,
+                style: const TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          ...question.options.asMap().entries.map(
-            (entry) => _OptionTile(
-              option: entry.value,
-              isSelected: selectedIndex == entry.key,
-              onTap: () => context.read<TestCubit>().answer(
+                  color: AppColors.textPrimary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ...question.options.asMap().entries.map(
+                (entry) => _OptionTile(
+                  option: entry.value,
+                  isSelected: selectedIndex == entry.key,
+                  onTap: () => context.read<TestCubit>().answer(
                     question.id,
                     entry.key,
                     entry.value.risk,
                   ),
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -403,7 +486,8 @@ class _OptionTile extends StatelessWidget {
               : AppColors.background,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-              color: isSelected ? AppColors.primary : Colors.transparent),
+            color: isSelected ? AppColors.primary : Colors.transparent,
+          ),
         ),
         child: Row(
           children: [
@@ -418,7 +502,9 @@ class _OptionTile extends StatelessWidget {
                 option.text,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                  color: isSelected
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
                 ),
               ),
             ),

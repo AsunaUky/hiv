@@ -72,41 +72,59 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ── Верхний блок: поля по центру ─────────────────
+                // LayoutBuilder даёт реальную высоту Expanded,
+                // ConstrainedBox растягивает Column до этой высоты,
+                // mainAxisAlignment: center — поля по середине.
+                // SingleChildScrollView включается когда клавиатура
+                // поднимается и места становится меньше.
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const _AuthHeader(
-                          title: 'Вход',
-                          subtitle: 'Добро пожаловать',
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 28),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
-                        const SizedBox(height: 32),
-                        AppTextField(
-                          controller: _emailCtrl,
-                          hint: 'Email',
-                          prefixIcon: Icons.mail_outline_rounded,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: AppValidators.email,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const _AuthHeader(
+                              title: 'Вход',
+                              subtitle: 'Добро пожаловать',
+                            ),
+                            const SizedBox(height: 32),
+                            AppTextField(
+                              controller: _emailCtrl,
+                              hint: 'Email',
+                              prefixIcon: Icons.mail_outline_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: AppValidators.email,
+                            ),
+                            const SizedBox(height: 14),
+                            AppTextField(
+                              controller: _passCtrl,
+                              hint: 'Пароль',
+                              prefixIcon: Icons.lock_outline_rounded,
+                              obscureText: _obscure,
+                              suffixIcon: _EyeToggle(
+                                obscure: _obscure,
+                                onTap: () =>
+                                    setState(() => _obscure = !_obscure),
+                              ),
+                              validator: AppValidators.loginPassword,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 14),
-                        AppTextField(
-                          controller: _passCtrl,
-                          hint: 'Пароль',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscure,
-                          suffixIcon: _EyeToggle(
-                            obscure: _obscure,
-                            onTap: () => setState(() => _obscure = !_obscure),
-                          ),
-                          validator: AppValidators.loginPassword,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
+                // ── Нижний блок: кнопки всегда внизу ─────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Column(
@@ -114,7 +132,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       BlocBuilder<AppBloc, AppState>(
                         builder: (_, state) => ElevatedButton(
-                          onPressed: state is AuthLoading ? null : _submit,
+                          onPressed:
+                              state is AuthLoading ? null : _submit,
                           child: state is AuthLoading
                               ? const _Spinner()
                               : const Text('Войти'),
@@ -134,19 +153,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (!_isGuest) ...[
                         const SizedBox(height: 10),
                         BlocBuilder<AppBloc, AppState>(
-                          builder: (context, state) => OutlinedButton.icon(
+                          builder: (context, state) =>
+                              OutlinedButton.icon(
                             onPressed: state is AuthLoading
                                 ? null
                                 : () => context
                                     .read<AppBloc>()
                                     .add(const AuthGuestRequested()),
                             icon: const Icon(
-                                Icons.person_outline_rounded, size: 18),
+                                Icons.person_outline_rounded,
+                                size: 18),
                             label: const Text('Войти как гость'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.textSecondary,
-                              side: const BorderSide(color: AppColors.divider),
-                              minimumSize: const Size(double.infinity, 50),
+                              side: const BorderSide(
+                                  color: AppColors.divider),
+                              minimumSize:
+                                  const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -183,15 +206,14 @@ class _AuthHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            'assets/icons/app_icon.png',
+            width: 44,
+            height: 44,
+            fit: BoxFit.cover,
           ),
-          child: const Icon(Icons.health_and_safety_outlined,
-              color: Colors.white, size: 24),
         ),
         const SizedBox(height: 20),
         Text(title,
@@ -218,7 +240,9 @@ class _EyeToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: Icon(
-        obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        obscure
+            ? Icons.visibility_off_outlined
+            : Icons.visibility_outlined,
         color: AppColors.textHint,
         size: 20,
       ),
@@ -235,7 +259,8 @@ class _Spinner extends StatelessWidget {
     return const SizedBox(
       width: 22,
       height: 22,
-      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+      child: CircularProgressIndicator(
+          color: Colors.white, strokeWidth: 2.5),
     );
   }
 }

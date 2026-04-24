@@ -16,6 +16,85 @@ class FirebaseAuthService {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // ── Email / Password ──────────────────────────────────────────
+
+  /// Вход по email и паролю.
+  ///
+  /// Перехватывает [FirebaseAuthException] и пробрасывает
+  /// [AuthException] с понятным текстом на русском языке.
+  Future<UserCredential> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      AppLogger.info('SignIn: ${credential.user?.email}');
+      return credential;
+    } on FirebaseAuthException catch (e, s) {
+      AppLogger.error('SignIn: ошибка', error: e, stackTrace: s);
+      throw AuthException(_mapSignInError(e.code));
+    }
+  }
+
+  /// Маппинг кодов Firebase → понятные сообщения для пользователя.
+  static String _mapSignInError(String code) {
+    switch (code) {
+      case 'user-not-found':
+      case 'invalid-credential':
+        // invalid-credential = Firebase v10+ заменяет user-not-found
+        // когда email не зарегистрирован
+        return 'Аккаунт с таким email не найден. Проверьте данные или зарегистрируйтесь.';
+      case 'wrong-password':
+        return 'Неверный пароль. Попробуйте ещё раз.';
+      case 'invalid-email':
+        return 'Некорректный формат email.';
+      case 'user-disabled':
+        return 'Этот аккаунт заблокирован. Обратитесь в поддержку.';
+      case 'too-many-requests':
+        return 'Слишком много попыток. Попробуйте позже.';
+      case 'network-request-failed':
+        return 'Нет подключения к интернету.';
+      default:
+        return 'Ошибка входа. Попробуйте ещё раз.';
+    }
+  }
+
+  /// Регистрация по email и паролю.
+  Future<UserCredential> createUserWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      AppLogger.info('Register: ${credential.user?.email}');
+      return credential;
+    } on FirebaseAuthException catch (e, s) {
+      AppLogger.error('Register: ошибка', error: e, stackTrace: s);
+      throw AuthException(_mapRegisterError(e.code));
+    }
+  }
+
+  static String _mapRegisterError(String code) {
+    switch (code) {
+      case 'email-already-in-use':
+        return 'Аккаунт с таким email уже существует. Попробуйте войти.';
+      case 'invalid-email':
+        return 'Некорректный формат email.';
+      case 'weak-password':
+        return 'Пароль слишком простой. Используйте не менее 6 символов.';
+      case 'network-request-failed':
+        return 'Нет подключения к интернету.';
+      default:
+        return 'Ошибка регистрации. Попробуйте ещё раз.';
+    }
+  }
+
   Future<void> initialize({required String serverClientId}) async {
     if (_initialized) return;
     await _googleSignIn.initialize(serverClientId: serverClientId);
@@ -108,4 +187,15 @@ class FirebaseAuthService {
       rethrow;
     }
   }
+}
+
+/// Исключение с человекочитаемым сообщением из [FirebaseAuthService].
+///
+/// Используй в AppBloc: `on AuthException catch (e) → emit(AuthFailure(e.message))`.
+class AuthException implements Exception {
+  const AuthException(this.message);
+  final String message;
+
+  @override
+  String toString() => 'AuthException: $message';
 }

@@ -52,6 +52,10 @@
       "count": {"type": "int"}
     }
   },
-  "testResultRetry": "Қайта тапсыру"
+  "testResultRetry": "Қайта тапсыру",
+
+"testRiskHigh": "Жоғары қауіп",
+"testRiskModerate": "Орташа қауіп",
+"testRiskMinimal": "Төмен қауіп"
 
 }

@@ -96,5 +96,13 @@
     }
   },
   "testResultRetry": "Пройти ещё раз",
-  "@testResultRetry": {}
+  "@testResultRetry": {},
+
+"testRiskHigh": "Высокий риск",
+"@testRiskHigh": {},
+"testRiskModerate": "Умеренный риск",
+"@testRiskModerate": {},
+"testRiskMinimal": "Минимальный риск",
+"@testRiskMinimal": {}
+
 }

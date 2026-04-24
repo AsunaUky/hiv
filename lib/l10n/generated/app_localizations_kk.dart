@@ -150,4 +150,13 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get testResultRetry => 'Қайта тапсыру';
+
+  @override
+  String get testRiskHigh => 'Жоғары қауіп';
+
+  @override
+  String get testRiskModerate => 'Орташа қауіп';
+
+  @override
+  String get testRiskMinimal => 'Төмен қауіп';
 }
