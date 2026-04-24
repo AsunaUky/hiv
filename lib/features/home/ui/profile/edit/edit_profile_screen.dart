@@ -56,9 +56,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    // Android 13+ использует системный Photo Picker — не требует пермишена.
-    // На старом Android и iOS image_picker сам запрашивает доступ.
-    // Мы проверяем только permanent denial — тогда отправляем в настройки.
     final status = await PermissionService.galleryStatus();
     if (status.isPermanentlyDenied) {
       if (mounted) _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
@@ -75,8 +72,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
       if (picked == null) return; // закрыл без выбора — норма
       setState(() => _pickedImage = File(picked.path));
-    } catch (_) {
-      // системная ошибка или отмена — не беспокоим пользователя
+    } catch (_) { // системная ошибка или отмена — не беспокоим пользователя
     }
   }
 
