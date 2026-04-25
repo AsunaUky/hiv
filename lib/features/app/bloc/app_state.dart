@@ -1,4 +1,3 @@
-// ignore_for_file: always_use_package_imports
 part of 'app_bloc.dart';
 
 sealed class AppState extends Equatable {

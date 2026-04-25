@@ -15,6 +15,7 @@ class FirebaseAuthService {
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get userChanges => _auth.userChanges();
 
   // ── Email / Password ──────────────────────────────────────────
 

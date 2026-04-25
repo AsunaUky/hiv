@@ -20,6 +20,15 @@ class AuthRepository {
 
   bool get isLoggedIn => _authService.currentUser != null;
 
+  Stream<UserModel> get userChanges {
+    return _authService.userChanges.map((User? firebaseUser) {
+      // ← userChanges
+      if (firebaseUser == null) return UserModel.empty;
+      return UserModel.fromFirebaseUser(firebaseUser);
+    });
+  }
+
+  // authStateChanges оставь как есть — он нужен для входа/выхода
   Stream<UserModel> get authStateChanges {
     return _authService.authStateChanges.map((User? firebaseUser) {
       if (firebaseUser == null) return UserModel.empty;
@@ -38,7 +47,11 @@ class AuthRepository {
       AppLogger.info('AuthRepository: вход — ${user.email}');
       return user;
     } catch (error, stackTrace) {
-      AppLogger.error('AuthRepository: ошибка входа', error: error, stackTrace: stackTrace);
+      AppLogger.error(
+        'AuthRepository: ошибка входа',
+        error: error,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -49,7 +62,11 @@ class AuthRepository {
       await _authService.signOut();
       AppLogger.info('AuthRepository: пользователь вышел');
     } catch (error, stackTrace) {
-      AppLogger.error('AuthRepository: ошибка выхода', error: error, stackTrace: stackTrace);
+      AppLogger.error(
+        'AuthRepository: ошибка выхода',
+        error: error,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -62,7 +79,11 @@ class AuthRepository {
       await _authService.deleteAccount();
       AppLogger.info('AuthRepository: аккаунт удалён');
     } catch (error, stackTrace) {
-      AppLogger.error('AuthRepository: ошибка удаления', error: error, stackTrace: stackTrace);
+      AppLogger.error(
+        'AuthRepository: ошибка удаления',
+        error: error,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }

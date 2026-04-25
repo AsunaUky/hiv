@@ -1,9 +1,8 @@
-import 'dart:convert';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hiv/features/info/domain/repositories/test_repository.dart';
 import 'package:hiv/features/info/domain/test_entity.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 part 'test_state.dart';
 
@@ -88,23 +87,40 @@ void previousQuestion() {
 }
 
 Future<void> _saveToHistory(String riskLevel) async {
-  final prefs = await SharedPreferences.getInstance();
-  final history = prefs.getStringList('test_history') ?? [];
-  final entry = jsonEncode({
-    'date': DateTime.now().toIso8601String(),
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return;
+
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('test_history')
+      .add({
     'riskLevel': riskLevel,
+    'date': FieldValue.serverTimestamp(),
   });
-  history.insert(0, entry);
-  if (history.length > 10) history.removeLast();
-  await prefs.setStringList('test_history', history);
 }
 
 Future<List<Map<String, dynamic>>> loadHistory() async {
-  final prefs = await SharedPreferences.getInstance();
-  final history = prefs.getStringList('test_history') ?? [];
-  return history
-      .map((e) => jsonDecode(e) as Map<String, dynamic>)
-      .toList();
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return [];
+
+  final snapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('test_history')
+      .orderBy('date', descending: true)
+      .limit(10)
+      .get();
+
+  return snapshot.docs.map((doc) {
+    final data = doc.data();
+    final timestamp = data['date'] as Timestamp?;
+    return {
+      'riskLevel': data['riskLevel'] as String,
+      'date': timestamp?.toDate().toIso8601String() ??
+          DateTime.now().toIso8601String(),
+    };
+  }).toList();
 }
 
   void restart() => emit(TestInitial());

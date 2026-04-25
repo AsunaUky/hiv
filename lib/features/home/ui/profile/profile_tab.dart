@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/data/models/user_model.dart';
+import 'package:hiv/data/repositories/auth_repository.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/features/home/ui/profile/guest_profile_screen.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
@@ -12,13 +14,12 @@ import 'package:hiv/l10n/generated/app_localizations.dart';
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
 
-  User? get _user => FirebaseAuth.instance.currentUser;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final firebaseUser = FirebaseAuth.instance.currentUser;
 
-    if (_user == null || _user!.isAnonymous) {
+    if (firebaseUser == null || firebaseUser.isAnonymous) {
       return const GuestProfileScreen();
     }
 
@@ -51,9 +52,18 @@ class ProfileTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               const SizedBox(height: 32),
-              _ProfileHeader(user: _user),
-              const SizedBox(height: 32),
 
+              // ← StreamBuilder следит за userChanges — обновляется мгновенно
+              StreamBuilder<UserModel>(
+                stream: AuthRepository.instance.userChanges,
+                initialData: AuthRepository.instance.currentUser,
+                builder: (context, snapshot) {
+                  final user = snapshot.data ?? UserModel.empty;
+                  return _ProfileHeader(user: user);
+                },
+              ),
+
+              const SizedBox(height: 32),
               _SectionLabel(label: l10n.profileLanguage),
               const _LanguageTile(),
               const SizedBox(height: 16),
@@ -85,7 +95,8 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmSignOut(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _confirmSignOut(
+      BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
@@ -99,10 +110,8 @@ class ProfileTab extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              l10n.profileSignOut,
-              style: const TextStyle(color: AppColors.error),
-            ),
+            child: Text(l10n.profileSignOut,
+                style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -112,7 +121,8 @@ class ProfileTab extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _confirmDelete(
+      BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
@@ -126,10 +136,8 @@ class ProfileTab extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              l10n.authDeleteConfirmBtn,
-              style: const TextStyle(color: AppColors.error),
-            ),
+            child: Text(l10n.authDeleteConfirmBtn,
+                style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -140,16 +148,18 @@ class ProfileTab extends StatelessWidget {
   }
 }
 
+// ─── Хедер профиля ───────────────────────────────────────────────
+
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user});
-  final User? user;
+  final UserModel user; // ← UserModel вместо User?
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final photoUrl = user?.photoURL;
-    final name = user?.displayName ?? '';
-    final email = user?.email ?? '';
+    final photoUrl = user.photoUrl.isEmpty ? null : user.photoUrl;
+    final name = user.displayName;
+    final email = user.email;
 
     return Column(
       children: [
@@ -187,6 +197,8 @@ class _ProfileHeader extends StatelessWidget {
     );
   }
 }
+
+// ─── Вспомогательные виджеты ─────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -236,6 +248,7 @@ class _MenuTile extends StatelessWidget {
 
 class _LanguageTile extends StatelessWidget {
   const _LanguageTile();
+
   @override
   Widget build(BuildContext context) {
     final isKazakh = context.watch<LocaleCubit>().state.languageCode == 'kk';
