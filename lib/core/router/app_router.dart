@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/features/home/ui/map_screen.dart';
+import 'package:hiv/features/map/map_screen.dart';
 import 'package:hiv/features/home/ui/profile/edit/edit_profile_screen.dart';
 import 'package:hiv/features/home/ui/profile/profile_tab.dart';
 import 'package:hiv/features/test/ui/cubit/test_cubit.dart';

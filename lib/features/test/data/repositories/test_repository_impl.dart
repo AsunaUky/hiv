@@ -1,6 +1,6 @@
 import 'package:hiv/features/info/domain/repositories/test_repository.dart';
 import 'package:hiv/features/info/domain/test_entity.dart';
-import 'package:hiv/features/test/data/test_remote_datasource.dart';
+import 'package:hiv/data/datasources/test_remote_datasource.dart';
 
 
 class TestRepositoryImpl implements TestRepository {

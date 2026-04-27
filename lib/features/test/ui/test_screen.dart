@@ -7,7 +7,7 @@ import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/info/domain/test_entity.dart';
 import 'package:hiv/features/test/data/repositories/test_repository_impl.dart';
-import 'package:hiv/features/test/data/test_remote_datasource.dart';
+import 'package:hiv/data/datasources/test_remote_datasource.dart';
 import 'package:hiv/features/test/ui/cubit/test_cubit.dart';
 
 class TestScreen extends StatelessWidget {

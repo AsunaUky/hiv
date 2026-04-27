@@ -180,15 +180,57 @@ class FirebaseAuthService {
     if (user == null) return;
 
     try {
-      await _googleSignIn.signOut().catchError((_) {});
-      await user.delete();
-      AppLogger.info('Delete Account: аккаунт удалён');
+      final serverClientId = dotenv.env['SERVER_CLIENT_ID'];
+      if (serverClientId != null) {
+        await initialize(serverClientId: serverClientId);
+        try {
+          await _googleSignIn.disconnect();
+        } catch (_) {}
+
+        final completer = Completer<void>();
+        late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
+
+        subscription = _googleSignIn.authenticationEvents.listen(
+          (event) async {
+            try {
+              switch (event) {
+                case GoogleSignInAuthenticationEventSignIn():
+                  final idToken = event.user.authentication.idToken;
+                  final credential = GoogleAuthProvider.credential(idToken: idToken);
+                  await user.reauthenticateWithCredential(credential);
+                  await _googleSignIn.signOut().catchError((_) {});
+                  await user.delete();
+                  AppLogger.info('Delete Account: аккаунт удалён');
+                  if (!completer.isCompleted) completer.complete();
+
+                case GoogleSignInAuthenticationEventSignOut():
+                  if (!completer.isCompleted) {
+                    completer.completeError(
+                      AuthException('Необходимо войти через Google для подтверждения.'),
+                    );
+                  }
+              }
+            } catch (e) {
+              if (!completer.isCompleted) completer.completeError(e);
+            } finally {
+              await subscription.cancel();
+            }
+          },
+          onError: (Object error) {
+            if (!completer.isCompleted) completer.completeError(error);
+            subscription.cancel();
+          },
+        );
+
+        _googleSignIn.authenticate();
+        return completer.future;
+      }
     } on FirebaseAuthException catch (e) {
       AppLogger.error('Delete Account: ошибка', error: e);
       rethrow;
     }
   }
-}
+} // ← закрывает FirebaseAuthService
 
 /// Исключение с человекочитаемым сообщением из [FirebaseAuthService].
 ///

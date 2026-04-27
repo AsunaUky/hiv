@@ -1,4 +1,4 @@
-import 'package:hiv/features/info/data/article_remote_datasource.dart';
+import 'package:hiv/data/datasources/article_remote_datasource.dart';
 import 'package:hiv/features/info/domain/article_entity.dart';
 import 'package:hiv/features/info/domain/repositories/article_repository.dart';
 
