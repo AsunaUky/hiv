@@ -8,7 +8,7 @@ import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/domain/entities/test_entity.dart';
 import 'package:hiv/data/repositories/test_repository_impl.dart';
 import 'package:hiv/data/datasources/test_remote_datasource.dart';
-import 'package:hiv/features/test/ui/cubit/test_cubit.dart';
+import 'package:hiv/features/test/bloc/test_cubit.dart';
 
 class TestScreen extends StatelessWidget {
   const TestScreen({super.key});

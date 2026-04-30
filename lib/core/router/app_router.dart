@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/features/map/map_screen.dart';
 import 'package:hiv/features/home/ui/profile/edit/edit_profile_screen.dart';
 import 'package:hiv/features/home/ui/profile/profile_tab.dart';
-import 'package:hiv/features/test/ui/cubit/test_cubit.dart';
+import 'package:hiv/features/test/bloc/test_cubit.dart';
 import 'package:hiv/features/test/ui/test_result_screen.dart';
 import 'package:hiv/features/test/ui/test_screen.dart';
 import 'package:hiv/domain/entities/article_entity.dart';

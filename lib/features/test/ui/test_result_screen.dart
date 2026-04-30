@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
-import 'package:hiv/features/test/ui/cubit/test_cubit.dart';
+import 'package:hiv/features/test/bloc/test_cubit.dart';
 
 class TestResultScreen extends StatelessWidget {
   const TestResultScreen({super.key, required this.completed});
