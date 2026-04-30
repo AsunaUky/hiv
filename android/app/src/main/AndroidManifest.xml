@@ -7,7 +7,7 @@
     android:maxSdkVersion="32"/>
 
     <application
-        android:label="hiv"
+        android:label="BeSure"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

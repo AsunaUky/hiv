@@ -6,7 +6,6 @@ class TestRemoteDataSource {
   final FirebaseFirestore _firestore;
   TestRemoteDataSource(this._firestore);
 
-  // Путь: /test_metadata_multilingual/
   CollectionReference get _collection =>
       _firestore.collection('test_metadata_multilingual');
 

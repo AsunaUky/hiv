@@ -101,7 +101,7 @@ class _MapScreenState extends State<MapScreen> {
                 '${mockPlaces.length} точек',
                 style: TextStyle(
                   color: colorScheme.onPrimary.withValues(alpha: 0.85),
-                  fontSize: 13,
+                  fontSize: 16,
                 ),
               ),
             ),
