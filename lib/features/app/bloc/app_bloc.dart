@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hiv/data/repositories/auth_repository.dart';
+import 'package:hiv/domain/repositories/auth_repository.dart';
 
 part 'app_event.dart';
 part 'app_state.dart';

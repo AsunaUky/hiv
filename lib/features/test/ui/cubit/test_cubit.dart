@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hiv/features/info/domain/repositories/test_repository.dart';
-import 'package:hiv/features/info/domain/test_entity.dart';
+import 'package:hiv/domain/repositories/test_repository.dart';
+import 'package:hiv/domain/entities/test_entity.dart';
 
 part 'test_state.dart';
 

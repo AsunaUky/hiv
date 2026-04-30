@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hiv/data/models/test_model.dart';
-import 'package:hiv/features/info/domain/test_entity.dart';
+import 'package:hiv/domain/entities/test_entity.dart';
 
 class TestRemoteDataSource {
   final FirebaseFirestore _firestore;

@@ -1,6 +1,17 @@
-// TODO:  Реализовать методы тестового репозитория
-// это файл для реализации тестового репозитория,
-//который может использоваться для тестирования функционала получения
-//статей без необходимости подключения к реальному удаленному источнику данных.
-//В этом файле можно создать фиктивные данные и методы,
-//которые будут возвращать эти данные в виде сущностей для использования в тестах.
+import 'package:hiv/domain/repositories/test_repository.dart';
+import 'package:hiv/domain/entities/test_entity.dart';
+import 'package:hiv/data/datasources/test_remote_datasource.dart';
+
+
+class TestRepositoryImpl implements TestRepository {
+  final TestRemoteDataSource _dataSource;
+  TestRepositoryImpl(this._dataSource);
+
+  @override
+  Future<List<TestBlock>> getBlocks(String locale) =>
+      _dataSource.getBlocks(locale);
+
+  @override
+  Future<TestResultsLogic> getResultsLogic(String locale) =>
+      _dataSource.getResultsLogic(locale);
+}

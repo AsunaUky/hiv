@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hiv/features/info/domain/test_entity.dart';
+import 'package:hiv/domain/entities/test_entity.dart';
 
 // Хелпер: достаёт текст по локали из плоских полей (text_ru / text_kz)
 String _loc(Map<String, dynamic> json, String field, String locale) {

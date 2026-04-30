@@ -1,4 +1,4 @@
-import 'package:hiv/features/info/domain/test_entity.dart';
+import 'package:hiv/domain/entities/test_entity.dart';
 
 abstract class TestRepository {
   Future<List<TestBlock>> getBlocks(String locale);

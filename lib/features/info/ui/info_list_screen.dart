@@ -8,7 +8,7 @@ import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/data/datasources/article_remote_datasource.dart';
 import 'package:hiv/data/repositories/article_repository_impl.dart';
-import 'package:hiv/features/info/domain/article_entity.dart';
+import 'package:hiv/domain/entities/article_entity.dart';
 import 'package:hiv/features/info/ui/cubit/articles_list_cubit.dart';
 
 class InfoListScreen extends StatelessWidget {

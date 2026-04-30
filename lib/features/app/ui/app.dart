@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/theme/app_theme.dart';
-import 'package:hiv/data/repositories/auth_repository.dart';
+import 'package:hiv/domain/repositories/auth_repository.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
 

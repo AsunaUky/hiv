@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
-import 'package:hiv/features/info/domain/article_entity.dart';
+import 'package:hiv/domain/entities/article_entity.dart';
 
 class ArticleBlockModel extends Equatable {
   const ArticleBlockModel({required this.type, required this.content});

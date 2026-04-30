@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
-import 'package:hiv/features/info/domain/article_entity.dart';
+import 'package:hiv/domain/entities/article_entity.dart';
 
 /// Экран чтения статьи (без BottomNavigationBar).
 ///

@@ -6,7 +6,7 @@ import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/data/models/user_model.dart';
-import 'package:hiv/data/repositories/auth_repository.dart';
+import 'package:hiv/domain/repositories/auth_repository.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/features/home/ui/profile/guest_profile_screen.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
