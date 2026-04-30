@@ -11,15 +11,16 @@ class TestRemoteDataSource {
       _firestore.collection('test_metadata_multilingual');
 
   Future<List<TestBlock>> getBlocks(String locale) async {
-    final blockIds = ['block_0', 'block_1', 'block_2', 'block_3'];
-    final blocks = <TestBlock>[];
-    for (final id in blockIds) {
-      final doc = await _collection.doc(id).get();
-      if (doc.exists) {
-        blocks.add(TestBlockModel.fromFirestore(doc).toEntity(locale));
-      }
-    }
-    return blocks;
+    const blockIds = ['block_0', 'block_1', 'block_2', 'block_3'];
+
+    final docs = await Future.wait(
+      blockIds.map((id) => _collection.doc(id).get()),
+    );
+
+    return docs
+        .where((doc) => doc.exists)
+        .map((doc) => TestBlockModel.fromFirestore(doc).toEntity(locale))
+        .toList();
   }
 
   Future<TestResultsLogic> getResultsLogic(String locale) async {
