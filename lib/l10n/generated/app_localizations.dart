@@ -457,6 +457,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Повторить'**
   String get retry;
+
+  /// No description provided for @mapLocationGpsOff.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включите GPS на устройстве'**
+  String get mapLocationGpsOff;
 }
 
 class _AppLocalizationsDelegate

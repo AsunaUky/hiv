@@ -194,4 +194,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get retry => 'Повторить';
+
+  @override
+  String get mapLocationGpsOff => 'Включите GPS на устройстве';
 }

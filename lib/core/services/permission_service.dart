@@ -5,36 +5,38 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Сервис разрешений.
 ///
-/// • Статические методы ([galleryStatus], [openSettings]) сохранены для
-///   обратной совместимости с [EditProfileScreen].
-/// • Инстанс-методы ([requestLocation], [requestGallery]) работают с per-user
-///   памятью через SharedPreferences (ключ содержит uid).
+/// Ключевые решения:
+/// • Галерея: всегда используем [Permission.photos] — permission_handler сам
+///   маппит его на READ_MEDIA_IMAGES (Android 13+) или READ_EXTERNAL_STORAGE
+///   (Android ≤12). Никакой ручной логики версий не нужно.
+/// • Статические методы сохранены для [EditProfileScreen].
+/// • Инстанс-методы с uid-ключами — per-user память для карты.
 class PermissionService {
-  // ── Статические методы (EditProfileScreen) ────────────────────────────────
+  // ── Статические хелперы (EditProfileScreen) ───────────────────────────────
 
-  /// Текущий статус разрешения галереи без запроса диалога.
-  /// Используется в [EditProfileScreen].
+  /// Запрашивает разрешение на галерею и возвращает итоговый статус.
+  /// Используется в [EditProfileScreen] (вызывается до ImagePicker).
+  static Future<PermissionStatus> requestGalleryPermission() async {
+    return Permission.photos.request();
+  }
+
+  /// Текущий статус без диалога (только для проверки).
   static Future<PermissionStatus> galleryStatus() async {
-    final perm = await _resolveGalleryPermission();
-    return perm.status;
+    return Permission.photos.status;
   }
 
   /// Открывает системные настройки приложения.
-  /// Используется в [EditProfileScreen].
   static Future<void> openSettings() => openAppSettings();
 
   // ── Инстанс: геолокация (MapScreen) ───────────────────────────────────────
 
-  /// Запрашивает разрешение на геолокацию.
-  ///
-  /// [uid] — uid текущего пользователя. Запрос запоминается отдельно для
-  /// каждого аккаунта, чтобы не пугать нового пользователя чужим «denied».
-  /// Если было навсегда отклонено — открывает настройки. Возвращает `true`
-  /// при успехе.
+  /// Запрашивает разрешение на геолокацию с per-user памятью.
+  /// [uid] — uid текущего пользователя (из FirebaseAuth).
   Future<bool> requestLocation(String uid) async {
     final prefs = await SharedPreferences.getInstance();
     final permanentKey = '${_locKey(uid)}_permanent';
 
+    // Если для этого пользователя уже было навсегда отклонено — в настройки.
     if (prefs.getBool(permanentKey) ?? false) {
       await openAppSettings();
       return false;
@@ -57,53 +59,12 @@ class PermissionService {
   Future<bool> isLocationGranted() async =>
       (await Permission.locationWhenInUse.status).isGranted;
 
-  // ── Инстанс: галерея (per-user, MapScreen / будущий EditProfile) ──────────
-
-  /// Запрашивает разрешение на галерею с per-user памятью.
-  Future<bool> requestGallery(String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    final permanentKey = '${_galKey(uid)}_permanent';
-
-    if (prefs.getBool(permanentKey) ?? false) {
-      await openAppSettings();
-      return false;
-    }
-
-    final perm = await _resolveGalleryPermission();
-    final status = await perm.request();
-
-    if (status.isGranted || status.isLimited) {
-      await prefs.setBool(_galKey(uid), true);
-      return true;
-    }
-    if (status.isPermanentlyDenied) {
-      await prefs.setBool(permanentKey, true);
-      await openAppSettings();
-    }
-    return false;
-  }
-
-  /// Сбрасывает флаги «permanently denied» после ручной выдачи в настройках.
+  /// Сбрасывает флаги «permanently denied» для пользователя
+  /// (например, после того как он вручную выдал разрешение в настройках).
   Future<void> resetDeniedFlags(String uid) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('${_locKey(uid)}_permanent');
-    await prefs.remove('${_galKey(uid)}_permanent');
   }
-
-  // ── Приватные хелперы ──────────────────────────────────────────────────────
 
   static String _locKey(String uid) => 'perm_location_$uid';
-  static String _galKey(String uid) => 'perm_gallery_$uid';
-
-  /// Android 13+ и iOS: [Permission.photos].
-  /// Android ≤12: [Permission.storage].
-  static Future<Permission> _resolveGalleryPermission() async {
-    // Если photos не в состоянии denied — платформа его поддерживает.
-    final s = await Permission.photos.status;
-    if (s != PermissionStatus.denied) return Permission.photos;
-    if (await Permission.photos.shouldShowRequestRationale) {
-      return Permission.photos;
-    }
-    return Permission.storage;
-  }
 }

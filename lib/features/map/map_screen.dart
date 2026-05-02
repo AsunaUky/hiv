@@ -1,5 +1,4 @@
-// ─── Важно: latlong2 экспортирует свой класс Path<T>, который конфликтует
-// с dart:ui Path, используемым в CustomPainter. Скрываем его через `hide`.
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -7,9 +6,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hiv/features/map/bloc/trust_points_cubit.dart';
 import 'package:hiv/features/map/bloc/trust_points_state.dart';
 import 'package:hiv/features/map/ui/widgets/trust_point_card.dart';
-import 'package:latlong2/latlong.dart' hide Path; // ← скрываем Path из latlong2
+import 'package:latlong2/latlong.dart' hide Path; // скрываем Path из latlong2
 import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/locale/locale_cubit.dart';
 import '../../../core/services/permission_service.dart';
@@ -17,9 +15,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/trust_points_entity.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
-
-// Удобное расширение — убирает необходимость писать `!` при каждом обращении.
-extension _ContextL10n on BuildContext {
+extension _L10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
 }
 
@@ -51,48 +47,79 @@ class _MapScreenState extends State<MapScreen> {
   // ── Геолокация ─────────────────────────────────────────────────────────────
 
   Future<void> _onFindMeTapped() async {
-    // uid берём из FirebaseAuth. Для анонимных пользователей — uid тоже есть.
     final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     final permService = PermissionService();
 
+    // Проверяем без диалога — если уже выдано, не тревожим пользователя.
     final alreadyGranted = await permService.isLocationGranted();
     if (!alreadyGranted) {
       final granted = await permService.requestLocation(uid);
-      if (!granted) return;
+      if (!granted) return; // отказал или открыли настройки
     }
 
     try {
+      // Timeout 10 сек — без него на некоторых устройствах висит бесконечно.
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
       );
-      _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
+      if (mounted) {
+        _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
+      }
+    } on LocationServiceDisabledException {
+      // GPS выключен на устройстве.
+      if (mounted) {
+        _showSnackBar(context.l10n.mapLocationGpsOff);
+      }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.mapLocationError),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _showSnackBar(context.l10n.mapLocationError);
       }
     }
   }
 
-  // ── Маршрут: 2ГИС → Google Maps fallback ──────────────────────────────────
+  void _showSnackBar(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  // ── Маршрут: 2ГИС → веб-версия 2ГИС → Google Maps ────────────────────────
+  //
+  // 2ГИС использует порядок: ДОЛГОТА,ШИРОТА (lng,lat) — это важно!
+  //
+  // Порядок попыток:
+  //   1. dgis:// — приложение 2ГИС (если установлено)
+  //   2. https://2gis.kz/routeto — веб-версия 2ГИС (всегда работает)
+  //   3. Google Maps — абсолютный fallback
+  //
+  // Для Android 11+ нужно добавить в AndroidManifest.xml (см. комментарий
+  // в конце файла) — иначе canLaunchUrl для dgis:// всегда вернёт false.
 
   static Future<void> _openRoute(double lat, double lng) async {
-    // 2ГИС ожидает longitude,latitude (обратный порядок!).
-    final twoGis =
-        Uri.parse('dgis://2gis.kz/routeTo?ll=$lng,$lat&type=pedestrian');
-    final google = Uri.parse(
+    // 1. Приложение 2ГИС (deep link).
+    final twoGisApp = Uri.parse(
+      'dgis://2gis.ru/routeTo?ll=$lng,$lat&type=pedestrian',
+    );
+
+    // 2. Веб-версия 2ГИС (работает без приложения, открывает в браузере).
+    final twoGisWeb = Uri.parse(
+      'https://2gis.kz/routeto?ll=$lng,$lat',
+    );
+
+    // 3. Google Maps (абсолютный fallback).
+    final googleMaps = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
     );
 
-    if (await canLaunchUrl(twoGis)) {
-      await launchUrl(twoGis);
+    if (await canLaunchUrl(twoGisApp)) {
+      await launchUrl(twoGisApp);
+    } else if (await canLaunchUrl(twoGisWeb)) {
+      await launchUrl(twoGisWeb, mode: LaunchMode.externalApplication);
     } else {
-      await launchUrl(google, mode: LaunchMode.externalApplication);
+      await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -111,13 +138,9 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // LocaleCubit эмитит Locale напрямую (Cubit<Locale>).
-    // Если у вас другой тип состояния — замените Locale на свой.
     return BlocListener<LocaleCubit, Locale>(
       listener: (context, locale) {
-        context
-            .read<TrustPointsCubit>()
-            .changeLocale(locale.languageCode);
+        context.read<TrustPointsCubit>().changeLocale(locale.languageCode);
       },
       child: Scaffold(
         appBar: AppBar(
@@ -188,12 +211,12 @@ class _MapBody extends StatelessWidget {
             initialZoom: 10.5,
             minZoom: 3,
             maxZoom: 18,
-            onTap: (_, _) => onClose(), // ← два разных wildcard: _ и __
+            onTap: (_, _) => onClose(),
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.hiv.app',
+              userAgentPackageName: 'com.example.hiv',
               maxZoom: 18,
             ),
             MarkerLayer(
@@ -335,15 +358,13 @@ class _MarkerPin extends StatelessWidget {
   }
 }
 
-// Рисует треугольное остриё маркера.
-// Использует dart:ui Path — latlong2/Path скрыт через `hide Path` в импорте.
 class _PinTail extends CustomPainter {
   const _PinTail({required this.color});
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = Path() // ← это dart:ui Path, не latlong2 Path
+    final path = Path()
       ..moveTo(0, 0)
       ..lineTo(size.width / 2, size.height)
       ..lineTo(size.width, 0)
@@ -356,7 +377,7 @@ class _PinTail extends CustomPainter {
 }
 
 // =============================================================================
-// _Legend
+// _Legend / _LegendRow
 // =============================================================================
 
 class _Legend extends StatelessWidget {
@@ -388,7 +409,8 @@ class _Legend extends StatelessWidget {
               label: l10n.mapLegendDerma),
           const SizedBox(height: 4),
           _LegendRow(
-              color: AppColors.trustAidsCenter, label: l10n.mapLegendAids),
+              color: AppColors.trustAidsCenter,
+              label: l10n.mapLegendAids),
         ],
       ),
     );

@@ -192,4 +192,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get retry => 'Қайталау';
+
+  @override
+  String get mapLocationGpsOff => 'Құрылғыда GPS-ті қосыңыз';
 }

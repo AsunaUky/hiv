@@ -56,7 +56,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final status = await PermissionService.galleryStatus();
+    final status = await PermissionService.requestGalleryPermission();
     if (status.isPermanentlyDenied) {
       if (mounted) _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
       await PermissionService.openSettings();

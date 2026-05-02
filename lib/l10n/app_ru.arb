@@ -127,6 +127,8 @@
 "close": "Закрыть",
 "@close": {},
 "retry": "Повторить",
-"@retry": {}
+"@retry": {},
+"mapLocationGpsOff": "Включите GPS на устройстве",
+"@mapLocationGpsOff": {}
 
 }
