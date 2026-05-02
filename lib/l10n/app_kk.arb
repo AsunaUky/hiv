@@ -56,6 +56,19 @@
 
 "testRiskHigh": "Жоғары қауіп",
 "testRiskModerate": "Орташа қауіп",
-"testRiskMinimal": "Төмен қауіп"
+"testRiskMinimal": "Төмен қауіп",
+
+
+"mapTitle": "Сенім пункттері",
+"mapFindMe": "Мені табу",
+"mapLocationError": "Орналасқан жерді анықтау мүмкін болмады",
+"mapRouteButton": "Бағыт құру",
+"mapHoursLabel": "Жұмыс уақыты",
+"mapServicesLabel": "Қызметтер тізімі",
+"mapLegendPolyclinic": "Емхана",
+"mapLegendDerma": "Тері-вен. диспансер",
+"mapLegendAids": "ЖИТС орталығы",
+"close": "Жабу",
+"retry": "Қайталау"
 
 }

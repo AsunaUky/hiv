@@ -103,6 +103,30 @@
 "testRiskModerate": "Умеренный риск",
 "@testRiskModerate": {},
 "testRiskMinimal": "Минимальный риск",
-"@testRiskMinimal": {}
+"@testRiskMinimal": {},
+
+
+"mapTitle": "Пункты доверия",
+"@mapTitle": {},
+"mapFindMe": "Найти меня",
+"@mapFindMe": {},
+"mapLocationError": "Не удалось определить местоположение",
+"@mapLocationError": {},
+"mapRouteButton": "Построить маршрут",
+"@mapRouteButton": {},
+"mapHoursLabel": "Режим работы",
+"@mapHoursLabel": {},
+"mapServicesLabel": "Перечень услуг",
+"@mapServicesLabel": {},
+"mapLegendPolyclinic": "Поликлиника",
+"@mapLegendPolyclinic": {},
+"mapLegendDerma": "Кожвендиспансер",
+"@mapLegendDerma": {},
+"mapLegendAids": "Центр СПИД",
+"@mapLegendAids": {},
+"close": "Закрыть",
+"@close": {},
+"retry": "Повторить",
+"@retry": {}
 
 }

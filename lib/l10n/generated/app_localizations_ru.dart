@@ -161,4 +161,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get testRiskMinimal => 'Минимальный риск';
+
+  @override
+  String get mapTitle => 'Пункты доверия';
+
+  @override
+  String get mapFindMe => 'Найти меня';
+
+  @override
+  String get mapLocationError => 'Не удалось определить местоположение';
+
+  @override
+  String get mapRouteButton => 'Построить маршрут';
+
+  @override
+  String get mapHoursLabel => 'Режим работы';
+
+  @override
+  String get mapServicesLabel => 'Перечень услуг';
+
+  @override
+  String get mapLegendPolyclinic => 'Поликлиника';
+
+  @override
+  String get mapLegendDerma => 'Кожвендиспансер';
+
+  @override
+  String get mapLegendAids => 'Центр СПИД';
+
+  @override
+  String get close => 'Закрыть';
+
+  @override
+  String get retry => 'Повторить';
 }

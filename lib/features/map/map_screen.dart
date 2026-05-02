@@ -1,27 +1,19 @@
-// lib/screens/map_screen.dart
-// =============================================================================
-// Главный экран карты — «Пункты доверия» г. Алматы.
-// =============================================================================
-//
-// Архитектура экрана:
-//   • FlutterMap (flutter_map ^8.3.0) — «холст» карты.
-//   • TileLayer — тайлы OpenStreetMap.
-//   • MarkerLayer — маркеры для каждой точки из [mockPlaces].
-//   • Stack поверх карты — карточка с детальной информацией ([PlaceDetailsCard]).
-//   • setState — управление выбранной точкой.
-// =============================================================================
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:hiv/data/datasources/trust_points_datasource.dart';
-import 'package:hiv/data/models/trust_point_entity.dart';
-import 'package:hiv/features/map/widgets/trust_point_card.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:hiv/domain/entities/trust_points_entity.dart';
+import 'package:hiv/features/map/bloc/trust_points_cubit.dart';
+import 'package:hiv/features/map/bloc/trust_points_state.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-/// Экран карты «Пунктов доверия».
-///
-/// [StatefulWidget]: нам нужно хранить выбранную точку [_selectedPlace]
-/// и перестраивать UI при её изменении через [setState].
+import '../../../core/locale/locale_cubit.dart';
+import '../../../core/services/permission_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../l10n/generated/app_localizations.dart';
+import 'ui/widgets/trust_point_card.dart';
+
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -30,30 +22,15 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  // ---------------------------------------------------------------------------
-  // 1. Контроллер карты
-  // ---------------------------------------------------------------------------
-  // Позволяет программно двигать камеру: при тапе на маркер центрируемся
-  // на нём. Создаётся один раз в [initState], освобождается в [dispose].
   late final MapController _mapController;
-
-  // ---------------------------------------------------------------------------
-  // 2. Текущая выбранная точка
-  // ---------------------------------------------------------------------------
-  // null → карточка скрыта; non-null → карточка показана для этой точки.
-  Place? _selectedPlace;
-
-  // ---------------------------------------------------------------------------
-  // 3. Начальная позиция камеры
-  // ---------------------------------------------------------------------------
-  // Центр Алматы — все 12 точек умещаются при зуме ~10.5.
-  static const _initialCenter = LatLng(43.2565, 76.9286);
-  static const _initialZoom = 10.5;
+  TrustPointEntity? _selectedPoint;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    final locale = context.read<LocaleCubit>().state.languageCode;
+    context.read<TrustPointsCubit>().load(locale);
   }
 
   @override
@@ -62,171 +39,252 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // Хендлеры
-  // ---------------------------------------------------------------------------
+  // ── Геолокация ─────────────────────────────────────────────────────────────
 
-  /// Тап по маркеру: запоминаем точку и плавно центрируемся на ней.
-  void _onMarkerTap(Place place) {
-    setState(() => _selectedPlace = place);
-    // Зум 14 при выборе точки — достаточно, чтобы увидеть улицу.
-    _mapController.move(place.location, 14.0);
+  Future<void> _onFindMeTapped() async {
+    // TODO: замените 'current_user' на реальный uid из AppBloc/FirebaseAuth.
+    const uid = 'current_user';
+    final permService = PermissionService();
+
+    final alreadyGranted = await permService.isLocationGranted();
+    if (!alreadyGranted) {
+      final granted = await permService.requestLocation(uid);
+      if (!granted) return;
+    }
+
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.mapLocationError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
-  /// Закрытие карточки (крестик или тап по пустому месту карты).
-  void _closeDetails() {
-    setState(() => _selectedPlace = null);
+  // ── Маршрут: 2ГИС → Google Maps fallback ──────────────────────────────────
+
+  static Future<void> _openRoute(double lat, double lng) async {
+    // 2ГИС ожидает longitude,latitude (обратный порядок!).
+    final twoGis = Uri.parse('dgis://2gis.kz/routeTo?ll=$lng,$lat&type=pedestrian');
+    final google = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+    );
+
+    if (await canLaunchUrl(twoGis)) {
+      await launchUrl(twoGis);
+    } else {
+      await launchUrl(google, mode: LaunchMode.externalApplication);
+    }
   }
 
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
+  // ── State helpers ──────────────────────────────────────────────────────────
+
+  void _onMarkerTap(TrustPointEntity point) {
+    setState(() => _selectedPoint = point);
+    _mapController.move(point.location, 14.0);
+  }
+
+  void _closeCard() => setState(() => _selectedPoint = null);
+
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        title: const Text('Пункты доверия'),
-        centerTitle: true,
-        actions: [
-          // Счётчик всех точек — быстрая справка для пользователя.
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                '${mockPlaces.length} точек',
-                style: TextStyle(
-                  color: colorScheme.onPrimary.withValues(alpha: 0.85),
-                  fontSize: 16,
-                ),
+    // Реагируем на смену языка: перемапливаем без нового network-запроса.
+    return BlocListener<LocaleCubit, LocaleState>(
+      listener: (context, localeState) {
+        context.read<TrustPointsCubit>().changeLocale(
+              localeState.locale.languageCode,
+            );
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          title: Text(l10n.mapTitle),
+          centerTitle: true,
+        ),
+        body: BlocBuilder<TrustPointsCubit, TrustPointsState>(
+          builder: (context, state) => switch (state) {
+            TrustPointsInitial() || TrustPointsLoading() =>
+              const Center(child: CircularProgressIndicator()),
+            TrustPointsError(:final message) => _ErrorView(
+                message: message,
+                onRetry: () {
+                  final locale =
+                      context.read<LocaleCubit>().state.languageCode;
+                  context.read<TrustPointsCubit>().load(locale);
+                },
               ),
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          // ── Слой 1: карта ─────────────────────────────────────────────────
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _initialCenter,
-              initialZoom: _initialZoom,
-              minZoom: 3,
-              maxZoom: 18,
-              // Тап по пустому месту закрывает карточку.
-              onTap: (_, _) => _closeDetails(),
-            ),
-            children: [
-              // Тайловый слой OpenStreetMap.
-              // В продакшене замените на коммерческого провайдера
-              // (Mapbox / MapTiler / Stadia Maps), иначе нарушите политику OSM.
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.trust_points_map',
-                maxZoom: 18,
+            TrustPointsLoaded(:final points) => _MapBody(
+                points: points,
+                selectedPoint: _selectedPoint,
+                mapController: _mapController,
+                onMarkerTap: _onMarkerTap,
+                onClose: _closeCard,
+                onFindMe: _onFindMeTapped,
+                onOpenRoute: (lat, lng) => _openRoute(lat, lng),
               ),
-
-              // Слой маркеров.
-              MarkerLayer(
-                markers: [
-                  for (final place in mockPlaces)
-                    Marker(
-                      point: place.location,
-                      width: 48,
-                      height: 48,
-                      // Якорь внизу: остриё маркера точно указывает на координату.
-                      alignment: Alignment.bottomCenter,
-                      child: _MarkerPin(
-                        place: place,
-                        isSelected: _selectedPlace?.id == place.id,
-                        onTap: () => _onMarkerTap(place),
-                      ),
-                    ),
-                ],
-              ),
-
-              // Обязательная атрибуция OSM (требование лицензии ODbL).
-              const RichAttributionWidget(
-                attributions: [
-                  TextSourceAttribution('© OpenStreetMap contributors'),
-                ],
-              ),
-            ],
-          ),
-
-          // ── Слой 2: легенда категорий (верхний левый угол) ────────────────
-          Positioned(top: 12, left: 12, child: _Legend()),
-
-          // ── Слой 3: карточка деталей снизу ────────────────────────────────
-          //
-          // AnimatedSwitcher даёт плавное появление / исчезновение.
-          // ValueKey по id необходим: без него AnimatedSwitcher не поймёт,
-          // что один Place сменился другим, и не запустит анимацию.
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              transitionBuilder: (child, animation) {
-                final slide =
-                    Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      ),
-                    );
-                return SlideTransition(
-                  position: slide,
-                  child: FadeTransition(opacity: animation, child: child),
-                );
-              },
-              child: _selectedPlace == null
-                  ? const SizedBox.shrink(key: ValueKey('empty'))
-                  : PlaceDetailsCard(
-                      key: ValueKey(_selectedPlace!.id),
-                      place: _selectedPlace!,
-                      onClose: _closeDetails,
-                    ),
-            ),
-          ),
-        ],
+          },
+        ),
       ),
     );
   }
 }
 
 // =============================================================================
-// _MarkerPin — один маркер на карте
+// _MapBody
 // =============================================================================
 
-/// Визуальный виджет маркера.
-///
-/// Вынесен в отдельный [StatelessWidget], чтобы Flutter мог эффективно
-/// перерисовывать только изменившиеся маркеры, а не весь экран.
-class _MarkerPin extends StatelessWidget {
-  final Place place;
-  final bool isSelected;
-  final VoidCallback onTap;
+class _MapBody extends StatelessWidget {
+  const _MapBody({
+    required this.points,
+    required this.selectedPoint,
+    required this.mapController,
+    required this.onMarkerTap,
+    required this.onClose,
+    required this.onFindMe,
+    required this.onOpenRoute,
+  });
 
+  final List<TrustPointEntity> points;
+  final TrustPointEntity? selectedPoint;
+  final MapController mapController;
+  final ValueChanged<TrustPointEntity> onMarkerTap;
+  final VoidCallback onClose;
+  final VoidCallback onFindMe;
+  final Future<void> Function(double lat, double lng) onOpenRoute;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: mapController,
+          options: MapOptions(
+            initialCenter: const LatLng(43.2565, 76.9286),
+            initialZoom: 10.5,
+            minZoom: 3,
+            maxZoom: 18,
+            onTap: (_, _) => onClose(),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.app', // ← поменяйте на свой
+              maxZoom: 18,
+            ),
+            MarkerLayer(
+              markers: [
+                for (final p in points)
+                  Marker(
+                    point: p.location,
+                    width: 48,
+                    height: 48,
+                    alignment: Alignment.bottomCenter,
+                    child: _MarkerPin(
+                      point: p,
+                      isSelected: selectedPoint?.id == p.id,
+                      onTap: () => onMarkerTap(p),
+                    ),
+                  ),
+              ],
+            ),
+            const RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution('© OpenStreetMap contributors'),
+              ],
+            ),
+          ],
+        ),
+
+        // Легенда — левый верхний угол.
+        const Positioned(top: 12, left: 12, child: _Legend()),
+
+        // Кнопка «Найти меня» — правый нижний угол, уходит вверх при открытой карточке.
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          right: 12,
+          bottom: selectedPoint != null ? 290 : 20,
+          child: _FindMeButton(onTap: onFindMe),
+        ),
+
+        // Карточка деталей.
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            transitionBuilder: (child, animation) => SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+            child: selectedPoint == null
+                ? const SizedBox.shrink(key: ValueKey('empty'))
+                : TrustPointCard(
+                    key: ValueKey(selectedPoint!.id),
+                    point: selectedPoint!,
+                    onClose: onClose,
+                    onOpenRoute: () => onOpenRoute(
+                      selectedPoint!.location.latitude,
+                      selectedPoint!.location.longitude,
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// _MarkerPin
+// =============================================================================
+
+class _MarkerPin extends StatelessWidget {
   const _MarkerPin({
-    required this.place,
+    required this.point,
     required this.isSelected,
     required this.onTap,
   });
 
+  final TrustPointEntity point;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  static Color _color(TrustPointCategory c) => switch (c) {
+        TrustPointCategory.polyclinic => AppColors.trustPolyclinic,
+        TrustPointCategory.dermatoVenerologic => AppColors.trustDermatoVenerologic,
+        TrustPointCategory.aidsCenter => AppColors.trustAidsCenter,
+      };
+
+  static IconData _icon(TrustPointCategory c) => switch (c) {
+        TrustPointCategory.polyclinic => Icons.local_hospital_outlined,
+        TrustPointCategory.dermatoVenerologic => Icons.medical_services_outlined,
+        TrustPointCategory.aidsCenter => Icons.health_and_safety_outlined,
+      };
+
   @override
   Widget build(BuildContext context) {
-    final color = _colorFor(place.category);
-
+    final color = _color(point.category);
     return GestureDetector(
-      // opaque: тап регистрируется даже в прозрачных областях виджета.
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: AnimatedScale(
@@ -236,13 +294,15 @@ class _MarkerPin extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Пузырь с иконкой.
             Container(
               width: 34,
               height: 34,
               decoration: BoxDecoration(
                 color: isSelected ? color : color.withValues(alpha: 0.85),
                 shape: BoxShape.circle,
+                border: isSelected
+                    ? Border.all(color: Colors.white, width: 2.5)
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: color.withValues(alpha: 0.45),
@@ -250,109 +310,78 @@ class _MarkerPin extends StatelessWidget {
                     offset: const Offset(0, 2),
                   ),
                 ],
-                border: isSelected
-                    ? Border.all(color: Colors.white, width: 2.5)
-                    : null,
               ),
-              child: Icon(
-                _iconFor(place.category),
-                color: Colors.white,
-                size: 18,
-              ),
+              child: Icon(_icon(point.category), color: Colors.white, size: 18),
             ),
-            // Острие (треугольник) под пузырём.
             CustomPaint(
               size: const Size(10, 6),
-              painter: _PinTailPainter(color: color),
+              painter: _PinTail(color: color),
             ),
           ],
         ),
       ),
     );
   }
-
-  static Color _colorFor(PlaceCategory category) {
-    switch (category) {
-      case PlaceCategory.polyclinic:
-        return const Color(0xFF1976D2); // Material Blue 700
-      case PlaceCategory.dermatoVenerologic:
-        return const Color(0xFF7B1FA2); // Material Purple 700
-      case PlaceCategory.aidsCenter:
-        return const Color(0xFFC62828); // Material Red 800
-    }
-  }
-
-  static IconData _iconFor(PlaceCategory category) {
-    switch (category) {
-      case PlaceCategory.polyclinic:
-        return Icons.local_hospital_outlined;
-      case PlaceCategory.dermatoVenerologic:
-        return Icons.medical_services_outlined;
-      case PlaceCategory.aidsCenter:
-        return Icons.health_and_safety_outlined;
-    }
-  }
 }
 
-// =============================================================================
-// _PinTailPainter — рисует острие маркера
-// =============================================================================
-
-class _PinTailPainter extends CustomPainter {
+class _PinTail extends CustomPainter {
+  const _PinTail({required this.color});
   final Color color;
-  const _PinTailPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final path = ui.Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width / 2, size.height)
-      ..lineTo(size.width, 0)
-      ..close();
-    canvas.drawPath(path, paint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, 0)
+        ..lineTo(size.width / 2, size.height)
+        ..lineTo(size.width, 0)
+        ..close(),
+      Paint()..color = color,
+    );
   }
 
   @override
-  bool shouldRepaint(_PinTailPainter old) => old.color != color;
+  bool shouldRepaint(_PinTail o) => o.color != color;
 }
 
 // =============================================================================
-// _Legend — легенда категорий (левый верхний угол)
+// _Legend
 // =============================================================================
 
 class _Legend extends StatelessWidget {
+  const _Legend();
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.93),
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _LegendItem(color: Color(0xFF1976D2), label: 'Поликлиника'),
-          SizedBox(height: 4),
-          _LegendItem(color: Color(0xFF7B1FA2), label: 'Кожвендиспансер'),
-          SizedBox(height: 4),
-          _LegendItem(color: Color(0xFFC62828), label: 'Центр СПИД'),
+          _LegendRow(color: AppColors.trustPolyclinic, label: l10n.mapLegendPolyclinic),
+          const SizedBox(height: 4),
+          _LegendRow(color: AppColors.trustDermatoVenerologic, label: l10n.mapLegendDerma),
+          const SizedBox(height: 4),
+          _LegendRow(color: AppColors.trustAidsCenter, label: l10n.mapLegendAids),
         ],
       ),
     );
   }
 }
 
-class _LegendItem extends StatelessWidget {
+class _LegendRow extends StatelessWidget {
+  const _LegendRow({required this.color, required this.label});
   final Color color;
   final String label;
-
-  const _LegendItem({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -367,6 +396,55 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.labelSmall),
       ],
+    );
+  }
+}
+
+// =============================================================================
+// _FindMeButton
+// =============================================================================
+
+class _FindMeButton extends StatelessWidget {
+  const _FindMeButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.small(
+      heroTag: 'map_find_me',
+      tooltip: AppLocalizations.of(context)!.mapFindMe,
+      onPressed: onTap,
+      child: const Icon(Icons.my_location_outlined),
+    );
+  }
+}
+
+// =============================================================================
+// _ErrorView
+// =============================================================================
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_outlined, size: 48),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
+          ],
+        ),
+      ),
     );
   }
 }

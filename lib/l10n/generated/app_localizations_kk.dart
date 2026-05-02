@@ -159,4 +159,37 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get testRiskMinimal => 'Төмен қауіп';
+
+  @override
+  String get mapTitle => 'Сенім пункттері';
+
+  @override
+  String get mapFindMe => 'Мені табу';
+
+  @override
+  String get mapLocationError => 'Орналасқан жерді анықтау мүмкін болмады';
+
+  @override
+  String get mapRouteButton => 'Бағыт құру';
+
+  @override
+  String get mapHoursLabel => 'Жұмыс уақыты';
+
+  @override
+  String get mapServicesLabel => 'Қызметтер тізімі';
+
+  @override
+  String get mapLegendPolyclinic => 'Емхана';
+
+  @override
+  String get mapLegendDerma => 'Тері-вен. диспансер';
+
+  @override
+  String get mapLegendAids => 'ЖИТС орталығы';
+
+  @override
+  String get close => 'Жабу';
+
+  @override
+  String get retry => 'Қайталау';
 }

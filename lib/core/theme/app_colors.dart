@@ -19,4 +19,15 @@ abstract final class AppColors {
 
     /// Цвет текста/иконок на primary-фоне.
   static const Color onPrimary = Colors.white;
+
+  // ── Пункты доверия ─────────────────────────────────────────────────────────
+
+  /// Маркер и акцент городских поликлиник.
+  static const Color trustPolyclinic = Color(0xFF1565C0); // Blue 800
+
+  /// Маркер и акцент кожно-венерологического диспансера.
+  static const Color trustDermatoVenerologic = Color(0xFF6A1B9A); // Purple 800
+
+  /// Маркер и акцент Центра СПИД.
+  static const Color trustAidsCenter = Color(0xFFB71C1C); // Red 900
 }

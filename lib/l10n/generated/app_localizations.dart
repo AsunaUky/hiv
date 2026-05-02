@@ -391,6 +391,72 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Минимальный риск'**
   String get testRiskMinimal;
+
+  /// No description provided for @mapTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пункты доверия'**
+  String get mapTitle;
+
+  /// No description provided for @mapFindMe.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найти меня'**
+  String get mapFindMe;
+
+  /// No description provided for @mapLocationError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось определить местоположение'**
+  String get mapLocationError;
+
+  /// No description provided for @mapRouteButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Построить маршрут'**
+  String get mapRouteButton;
+
+  /// No description provided for @mapHoursLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Режим работы'**
+  String get mapHoursLabel;
+
+  /// No description provided for @mapServicesLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перечень услуг'**
+  String get mapServicesLabel;
+
+  /// No description provided for @mapLegendPolyclinic.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поликлиника'**
+  String get mapLegendPolyclinic;
+
+  /// No description provided for @mapLegendDerma.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кожвендиспансер'**
+  String get mapLegendDerma;
+
+  /// No description provided for @mapLegendAids.
+  ///
+  /// In ru, this message translates to:
+  /// **'Центр СПИД'**
+  String get mapLegendAids;
+
+  /// No description provided for @close.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть'**
+  String get close;
+
+  /// No description provided for @retry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить'**
+  String get retry;
 }
 
 class _AppLocalizationsDelegate

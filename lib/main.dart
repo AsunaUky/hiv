@@ -11,6 +11,6 @@ void main() async {
   } catch (_) {}
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // await HIVTestSeeder.seedDatabase();
+  // await TrustPointsSeeder.seedTrustPoints();
   runApp(const HivApp());
 }
