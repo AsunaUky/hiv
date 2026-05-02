@@ -7,6 +7,7 @@ import 'package:hiv/domain/repositories/user_repository.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 extension _ContextL10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);

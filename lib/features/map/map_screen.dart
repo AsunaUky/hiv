@@ -1,18 +1,27 @@
+// ─── Важно: latlong2 экспортирует свой класс Path<T>, который конфликтует
+// с dart:ui Path, используемым в CustomPainter. Скрываем его через `hide`.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hiv/domain/entities/trust_points_entity.dart';
 import 'package:hiv/features/map/bloc/trust_points_cubit.dart';
 import 'package:hiv/features/map/bloc/trust_points_state.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:hiv/features/map/ui/widgets/trust_point_card.dart';
+import 'package:latlong2/latlong.dart' hide Path; // ← скрываем Path из latlong2
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/locale/locale_cubit.dart';
 import '../../../core/services/permission_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../domain/entities/trust_points_entity.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import 'ui/widgets/trust_point_card.dart';
+
+
+// Удобное расширение — убирает необходимость писать `!` при каждом обращении.
+extension _ContextL10n on BuildContext {
+  AppLocalizations get l10n => AppLocalizations.of(this);
+}
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -42,8 +51,8 @@ class _MapScreenState extends State<MapScreen> {
   // ── Геолокация ─────────────────────────────────────────────────────────────
 
   Future<void> _onFindMeTapped() async {
-    // TODO: замените 'current_user' на реальный uid из AppBloc/FirebaseAuth.
-    const uid = 'current_user';
+    // uid берём из FirebaseAuth. Для анонимных пользователей — uid тоже есть.
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     final permService = PermissionService();
 
     final alreadyGranted = await permService.isLocationGranted();
@@ -54,14 +63,15 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
       );
       _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.mapLocationError),
+            content: Text(context.l10n.mapLocationError),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -73,7 +83,8 @@ class _MapScreenState extends State<MapScreen> {
 
   static Future<void> _openRoute(double lat, double lng) async {
     // 2ГИС ожидает longitude,latitude (обратный порядок!).
-    final twoGis = Uri.parse('dgis://2gis.kz/routeTo?ll=$lng,$lat&type=pedestrian');
+    final twoGis =
+        Uri.parse('dgis://2gis.kz/routeTo?ll=$lng,$lat&type=pedestrian');
     final google = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
     );
@@ -98,21 +109,21 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Реагируем на смену языка: перемапливаем без нового network-запроса.
-    return BlocListener<LocaleCubit, LocaleState>(
-      listener: (context, localeState) {
-        context.read<TrustPointsCubit>().changeLocale(
-              localeState.locale.languageCode,
-            );
+    // LocaleCubit эмитит Locale напрямую (Cubit<Locale>).
+    // Если у вас другой тип состояния — замените Locale на свой.
+    return BlocListener<LocaleCubit, Locale>(
+      listener: (context, locale) {
+        context
+            .read<TrustPointsCubit>()
+            .changeLocale(locale.languageCode);
       },
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          title: Text(l10n.mapTitle),
+          title: Text(context.l10n.mapTitle),
           centerTitle: true,
         ),
         body: BlocBuilder<TrustPointsCubit, TrustPointsState>(
@@ -134,7 +145,7 @@ class _MapScreenState extends State<MapScreen> {
                 onMarkerTap: _onMarkerTap,
                 onClose: _closeCard,
                 onFindMe: _onFindMeTapped,
-                onOpenRoute: (lat, lng) => _openRoute(lat, lng),
+                onOpenRoute: _openRoute,
               ),
           },
         ),
@@ -177,12 +188,12 @@ class _MapBody extends StatelessWidget {
             initialZoom: 10.5,
             minZoom: 3,
             maxZoom: 18,
-            onTap: (_, _) => onClose(),
+            onTap: (_, _) => onClose(), // ← два разных wildcard: _ и __
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.app', // ← поменяйте на свой
+              userAgentPackageName: 'com.hiv.app',
               maxZoom: 18,
             ),
             MarkerLayer(
@@ -209,10 +220,8 @@ class _MapBody extends StatelessWidget {
           ],
         ),
 
-        // Легенда — левый верхний угол.
         const Positioned(top: 12, left: 12, child: _Legend()),
 
-        // Кнопка «Найти меня» — правый нижний угол, уходит вверх при открытой карточке.
         AnimatedPositioned(
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOutCubic,
@@ -221,7 +230,6 @@ class _MapBody extends StatelessWidget {
           child: _FindMeButton(onTap: onFindMe),
         ),
 
-        // Карточка деталей.
         Align(
           alignment: Alignment.bottomCenter,
           child: AnimatedSwitcher(
@@ -271,13 +279,15 @@ class _MarkerPin extends StatelessWidget {
 
   static Color _color(TrustPointCategory c) => switch (c) {
         TrustPointCategory.polyclinic => AppColors.trustPolyclinic,
-        TrustPointCategory.dermatoVenerologic => AppColors.trustDermatoVenerologic,
+        TrustPointCategory.dermatoVenerologic =>
+          AppColors.trustDermatoVenerologic,
         TrustPointCategory.aidsCenter => AppColors.trustAidsCenter,
       };
 
   static IconData _icon(TrustPointCategory c) => switch (c) {
         TrustPointCategory.polyclinic => Icons.local_hospital_outlined,
-        TrustPointCategory.dermatoVenerologic => Icons.medical_services_outlined,
+        TrustPointCategory.dermatoVenerologic =>
+          Icons.medical_services_outlined,
         TrustPointCategory.aidsCenter => Icons.health_and_safety_outlined,
       };
 
@@ -311,7 +321,8 @@ class _MarkerPin extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(_icon(point.category), color: Colors.white, size: 18),
+              child:
+                  Icon(_icon(point.category), color: Colors.white, size: 18),
             ),
             CustomPaint(
               size: const Size(10, 6),
@@ -324,20 +335,20 @@ class _MarkerPin extends StatelessWidget {
   }
 }
 
+// Рисует треугольное остриё маркера.
+// Использует dart:ui Path — latlong2/Path скрыт через `hide Path` в импорте.
 class _PinTail extends CustomPainter {
   const _PinTail({required this.color});
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-      Path()
-        ..moveTo(0, 0)
-        ..lineTo(size.width / 2, size.height)
-        ..lineTo(size.width, 0)
-        ..close(),
-      Paint()..color = color,
-    );
+    final path = Path() // ← это dart:ui Path, не latlong2 Path
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
   }
 
   @override
@@ -353,25 +364,31 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.93),
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _LegendRow(color: AppColors.trustPolyclinic, label: l10n.mapLegendPolyclinic),
+          _LegendRow(
+              color: AppColors.trustPolyclinic,
+              label: l10n.mapLegendPolyclinic),
           const SizedBox(height: 4),
-          _LegendRow(color: AppColors.trustDermatoVenerologic, label: l10n.mapLegendDerma),
+          _LegendRow(
+              color: AppColors.trustDermatoVenerologic,
+              label: l10n.mapLegendDerma),
           const SizedBox(height: 4),
-          _LegendRow(color: AppColors.trustAidsCenter, label: l10n.mapLegendAids),
+          _LegendRow(
+              color: AppColors.trustAidsCenter, label: l10n.mapLegendAids),
         ],
       ),
     );
@@ -412,7 +429,7 @@ class _FindMeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FloatingActionButton.small(
       heroTag: 'map_find_me',
-      tooltip: AppLocalizations.of(context)!.mapFindMe,
+      tooltip: context.l10n.mapFindMe,
       onPressed: onTap,
       child: const Icon(Icons.my_location_outlined),
     );
@@ -430,7 +447,6 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -441,7 +457,10 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
+            FilledButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.retry),
+            ),
           ],
         ),
       ),
