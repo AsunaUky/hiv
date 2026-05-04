@@ -2,8 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<!-- Геолокация -->
+        <key>NSLocationWhenInUseUsageDescription</key>
+        <string>Приложение использует геолокацию, чтобы показать ваше положение на карте</string>
+
+        <!-- Галерея -->
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Нужен доступ к галерее для изменения фото профиля</string>
+		<string>Приложение обращается к галерее для смены фото профиля</string>
+
+		<!-- 2ГИС (видимость схемы URL) -->
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+    		<string>dgis</string>
+		</array>
+
+
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
