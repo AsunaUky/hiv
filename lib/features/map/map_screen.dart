@@ -93,11 +93,13 @@ class _MapScreenState extends State<MapScreen> {
 
   static Future<void> _openRoute(double lat, double lng) async {
     final twoGisApp = Uri.parse(
-      'dgis://2gis.ru/routeTo?ll=$lng,$lat&type=pedestrian',
+      'dgis://2gis.kz/routeTo?ll=$lng,$lat&type=pedestrian',
     );
+
     final twoGisWeb = Uri.parse(
       'https://2gis.kz/almaty/directions/points/%7C$lng,$lat',
     );
+
     final googleMaps = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
     );
@@ -110,7 +112,9 @@ class _MapScreenState extends State<MapScreen> {
           twoGisWeb,
           mode: LaunchMode.externalApplication,
         );
-        if (!ok) await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
+        if (!ok) {
+          await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
+        }
       }
     } catch (_) {
       await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
@@ -141,26 +145,26 @@ class _MapScreenState extends State<MapScreen> {
         ),
         body: BlocBuilder<TrustPointsCubit, TrustPointsState>(
           builder: (context, state) => switch (state) {
-            TrustPointsInitial() || TrustPointsLoading() =>
-              const Center(child: CircularProgressIndicator()),
+            TrustPointsInitial() || TrustPointsLoading() => const Center(
+              child: CircularProgressIndicator(),
+            ),
             TrustPointsError(:final message) => _ErrorView(
-                message: message,
-                onRetry: () {
-                  final locale =
-                      context.read<LocaleCubit>().state.languageCode;
-                  context.read<TrustPointsCubit>().load(locale);
-                },
-              ),
+              message: message,
+              onRetry: () {
+                final locale = context.read<LocaleCubit>().state.languageCode;
+                context.read<TrustPointsCubit>().load(locale);
+              },
+            ),
             TrustPointsLoaded(:final points) => _MapBody(
-                points: points,
-                selectedPoint: _selectedPoint,
-                userLocation: _userLocation,
-                mapController: _mapController,
-                onMarkerTap: _onMarkerTap,
-                onClose: _closeCard,
-                onFindMe: _onFindMeTapped,
-                onOpenRoute: _openRoute,
-              ),
+              points: points,
+              selectedPoint: _selectedPoint,
+              userLocation: _userLocation,
+              mapController: _mapController,
+              onMarkerTap: _onMarkerTap,
+              onClose: _closeCard,
+              onFindMe: _onFindMeTapped,
+              onOpenRoute: _openRoute,
+            ),
           },
         ),
       ),
@@ -258,13 +262,16 @@ class _MapBody extends StatelessWidget {
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 280),
             transitionBuilder: (child, animation) => SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: FadeTransition(opacity: animation, child: child),
             ),
             child: selectedPoint == null
@@ -306,9 +313,10 @@ class _UserLocationMarkerState extends State<_UserLocationMarker>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-    _pulse = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _pulse = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
@@ -366,18 +374,16 @@ class _MarkerPin extends StatelessWidget {
   final VoidCallback onTap;
 
   static Color _color(TrustPointCategory c) => switch (c) {
-        TrustPointCategory.polyclinic => AppColors.trustPolyclinic,
-        TrustPointCategory.dermatoVenerologic =>
-          AppColors.trustDermatoVenerologic,
-        TrustPointCategory.aidsCenter => AppColors.trustAidsCenter,
-      };
+    TrustPointCategory.polyclinic => AppColors.trustPolyclinic,
+    TrustPointCategory.dermatoVenerologic => AppColors.trustDermatoVenerologic,
+    TrustPointCategory.aidsCenter => AppColors.trustAidsCenter,
+  };
 
   static IconData _icon(TrustPointCategory c) => switch (c) {
-        TrustPointCategory.polyclinic => Icons.local_hospital_outlined,
-        TrustPointCategory.dermatoVenerologic =>
-          Icons.medical_services_outlined,
-        TrustPointCategory.aidsCenter => Icons.health_and_safety_outlined,
-      };
+    TrustPointCategory.polyclinic => Icons.local_hospital_outlined,
+    TrustPointCategory.dermatoVenerologic => Icons.medical_services_outlined,
+    TrustPointCategory.aidsCenter => Icons.health_and_safety_outlined,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -460,15 +466,19 @@ class _Legend extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _LegendRow(
-              color: AppColors.trustPolyclinic,
-              label: l10n.mapLegendPolyclinic),
+            color: AppColors.trustPolyclinic,
+            label: l10n.mapLegendPolyclinic,
+          ),
           const SizedBox(height: 4),
           _LegendRow(
-              color: AppColors.trustDermatoVenerologic,
-              label: l10n.mapLegendDerma),
+            color: AppColors.trustDermatoVenerologic,
+            label: l10n.mapLegendDerma,
+          ),
           const SizedBox(height: 4),
           _LegendRow(
-              color: AppColors.trustAidsCenter, label: l10n.mapLegendAids),
+            color: AppColors.trustAidsCenter,
+            label: l10n.mapLegendAids,
+          ),
         ],
       ),
     );
@@ -529,10 +539,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: onRetry,
-              child: Text(context.l10n.retry),
-            ),
+            FilledButton(onPressed: onRetry, child: Text(context.l10n.retry)),
           ],
         ),
       ),
