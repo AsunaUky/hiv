@@ -82,42 +82,25 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // ── Маршрут: 2ГИС → веб 2ГИС → Google Maps ───────────────────────────────
-  //
-  // ВАЖНО: 2ГИС всегда ожидает ДОЛГОТУ первой: ll=lng,lat
-  //
-  // Веб-формат 2ГИС для маршрута до точки:
-  // https://2gis.kz/almaty/directions/points/|lng,lat
-  // Символ | (закодирован как %7C) означает «только пункт назначения»,
-  // 2ГИС сам определит точку отправления по геолокации браузера.
+  // ── Маршрут: Google Maps → веб 2ГИС  ──────────────────
 
   static Future<void> _openRoute(double lat, double lng) async {
-    final twoGisApp = Uri.parse(
-      'dgis://2gis.kz/routeTo?ll=$lng,$lat&type=pedestrian',
+    // Google Maps — гарантированно строит маршрут.
+    final googleMaps = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=walking',
     );
 
     final twoGisWeb = Uri.parse(
       'https://2gis.kz/almaty/directions/points/%7C$lng,$lat',
     );
 
-    final googleMaps = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
-    );
-
     try {
-      if (await canLaunchUrl(twoGisApp)) {
-        await launchUrl(twoGisApp);
-      } else {
-        final ok = await launchUrl(
-          twoGisWeb,
-          mode: LaunchMode.externalApplication,
-        );
-        if (!ok) {
-          await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
-        }
-      }
+      await launchUrl(
+        googleMaps,
+        mode: LaunchMode.externalApplication, // Android покажет chooser
+      );
     } catch (_) {
-      await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
+      await launchUrl(twoGisWeb, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -214,22 +197,25 @@ class _MapBody extends StatelessWidget {
             ),
             MarkerLayer(
               markers: [
-                // Маркеры пунктов доверия.
                 for (final p in points)
-                  Marker(
-                    point: p.location,
-                    width: 48,
-                    height: 48,
-                    alignment: Alignment.bottomCenter,
-                    child: _MarkerPin(
-                      point: p,
-                      isSelected: selectedPoint?.id == p.id,
-                      onTap: () => onMarkerTap(p),
+                  // Пропускаем точки с невалидными координатами — защита от краша.
+                  if (p.location.latitude.isFinite &&
+                      p.location.longitude.isFinite)
+                    Marker(
+                      point: p.location,
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.bottomCenter,
+                      child: _MarkerPin(
+                        point: p,
+                        isSelected: selectedPoint?.id == p.id,
+                        onTap: () => onMarkerTap(p),
+                      ),
                     ),
-                  ),
 
-                // Маркер пользователя — только если позиция определена.
-                if (userLocation != null)
+                if (userLocation != null &&
+                    userLocation!.latitude.isFinite &&
+                    userLocation!.longitude.isFinite)
                   Marker(
                     point: userLocation!,
                     width: 48,
