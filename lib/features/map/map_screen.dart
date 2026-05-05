@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hiv/features/map/bloc/trust_points_cubit.dart';
 import 'package:hiv/features/map/bloc/trust_points_state.dart';
 import 'package:hiv/features/map/ui/widgets/trust_point_card.dart';
-import 'package:latlong2/latlong.dart' hide Path; // скрываем Path из latlong2
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/locale/locale_cubit.dart';
@@ -29,6 +29,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   late final MapController _mapController;
   TrustPointEntity? _selectedPoint;
+  LatLng? _userLocation; // null = маркер пользователя не показываем
 
   @override
   void initState() {
@@ -47,36 +48,31 @@ class _MapScreenState extends State<MapScreen> {
   // ── Геолокация ─────────────────────────────────────────────────────────────
 
   Future<void> _onFindMeTapped() async {
+    // uid есть у всех пользователей Firebase (авторизованных и анонимных).
     final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
     final permService = PermissionService();
 
-    // Проверяем без диалога — если уже выдано, не тревожим пользователя.
     final alreadyGranted = await permService.isLocationGranted();
     if (!alreadyGranted) {
       final granted = await permService.requestLocation(uid);
-      if (!granted) return; // отказал или открыли настройки
+      if (!granted) return;
     }
 
     try {
-      // Timeout 10 сек — без него на некоторых устройствах висит бесконечно.
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 10),
         ),
       );
-      if (mounted) {
-        _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
-      }
+      if (!mounted) return;
+      final latLng = LatLng(pos.latitude, pos.longitude);
+      setState(() => _userLocation = latLng); // показываем маркер пользователя
+      _mapController.move(latLng, 15.0);
     } on LocationServiceDisabledException {
-      // GPS выключен на устройстве.
-      if (mounted) {
-        _showSnackBar(context.l10n.mapLocationGpsOff);
-      }
+      if (mounted) _showSnackBar(context.l10n.mapLocationGpsOff);
     } catch (_) {
-      if (mounted) {
-        _showSnackBar(context.l10n.mapLocationError);
-      }
+      if (mounted) _showSnackBar(context.l10n.mapLocationError);
     }
   }
 
@@ -86,44 +82,40 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // ── Маршрут: 2ГИС → веб-версия 2ГИС → Google Maps ────────────────────────
+  // ── Маршрут: 2ГИС → веб 2ГИС → Google Maps ───────────────────────────────
   //
-  // 2ГИС использует порядок: ДОЛГОТА,ШИРОТА (lng,lat) — это важно!
+  // ВАЖНО: 2ГИС всегда ожидает ДОЛГОТУ первой: ll=lng,lat
   //
-  // Порядок попыток:
-  //   1. dgis:// — приложение 2ГИС (если установлено)
-  //   2. https://2gis.kz/routeto — веб-версия 2ГИС (всегда работает)
-  //   3. Google Maps — абсолютный fallback
-  //
-  // Для Android 11+ нужно добавить в AndroidManifest.xml (см. комментарий
-  // в конце файла) — иначе canLaunchUrl для dgis:// всегда вернёт false.
+  // Веб-формат 2ГИС для маршрута до точки:
+  // https://2gis.kz/almaty/directions/points/|lng,lat
+  // Символ | (закодирован как %7C) означает «только пункт назначения»,
+  // 2ГИС сам определит точку отправления по геолокации браузера.
 
   static Future<void> _openRoute(double lat, double lng) async {
-    // 1. Приложение 2ГИС (deep link).
     final twoGisApp = Uri.parse(
       'dgis://2gis.ru/routeTo?ll=$lng,$lat&type=pedestrian',
     );
-
-    // 2. Веб-версия 2ГИС (работает без приложения, открывает в браузере).
     final twoGisWeb = Uri.parse(
-      'https://2gis.kz/routeto?ll=$lng,$lat',
+      'https://2gis.kz/almaty/directions/points/%7C$lng,$lat',
     );
-
-    // 3. Google Maps (абсолютный fallback).
     final googleMaps = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
     );
 
-    if (await canLaunchUrl(twoGisApp)) {
-      await launchUrl(twoGisApp);
-    } else if (await canLaunchUrl(twoGisWeb)) {
-      await launchUrl(twoGisWeb, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      if (await canLaunchUrl(twoGisApp)) {
+        await launchUrl(twoGisApp);
+      } else {
+        final ok = await launchUrl(
+          twoGisWeb,
+          mode: LaunchMode.externalApplication,
+        );
+        if (!ok) await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
       await launchUrl(googleMaps, mode: LaunchMode.externalApplication);
     }
   }
-
-  // ── State helpers ──────────────────────────────────────────────────────────
 
   void _onMarkerTap(TrustPointEntity point) {
     setState(() => _selectedPoint = point);
@@ -131,8 +123,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _closeCard() => setState(() => _selectedPoint = null);
-
-  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +154,7 @@ class _MapScreenState extends State<MapScreen> {
             TrustPointsLoaded(:final points) => _MapBody(
                 points: points,
                 selectedPoint: _selectedPoint,
+                userLocation: _userLocation,
                 mapController: _mapController,
                 onMarkerTap: _onMarkerTap,
                 onClose: _closeCard,
@@ -177,14 +168,11 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-// =============================================================================
-// _MapBody
-// =============================================================================
-
 class _MapBody extends StatelessWidget {
   const _MapBody({
     required this.points,
     required this.selectedPoint,
+    required this.userLocation,
     required this.mapController,
     required this.onMarkerTap,
     required this.onClose,
@@ -194,6 +182,7 @@ class _MapBody extends StatelessWidget {
 
   final List<TrustPointEntity> points;
   final TrustPointEntity? selectedPoint;
+  final LatLng? userLocation;
   final MapController mapController;
   final ValueChanged<TrustPointEntity> onMarkerTap;
   final VoidCallback onClose;
@@ -211,16 +200,17 @@ class _MapBody extends StatelessWidget {
             initialZoom: 10.5,
             minZoom: 3,
             maxZoom: 18,
-            onTap: (_, _) => onClose(),
+            onTap: (tapPos, latLng) => onClose(),
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: "com.example.hiv",
+              userAgentPackageName: 'com.example.hiv',
               maxZoom: 18,
             ),
             MarkerLayer(
               markers: [
+                // Маркеры пунктов доверия.
                 for (final p in points)
                   Marker(
                     point: p.location,
@@ -232,6 +222,16 @@ class _MapBody extends StatelessWidget {
                       isSelected: selectedPoint?.id == p.id,
                       onTap: () => onMarkerTap(p),
                     ),
+                  ),
+
+                // Маркер пользователя — только если позиция определена.
+                if (userLocation != null)
+                  Marker(
+                    point: userLocation!,
+                    width: 48,
+                    height: 48,
+                    alignment: Alignment.center,
+                    child: const _UserLocationMarker(),
                   ),
               ],
             ),
@@ -285,9 +285,74 @@ class _MapBody extends StatelessWidget {
   }
 }
 
-// =============================================================================
-// _MarkerPin
-// =============================================================================
+class _UserLocationMarker extends StatefulWidget {
+  const _UserLocationMarker();
+
+  @override
+  State<_UserLocationMarker> createState() => _UserLocationMarkerState();
+}
+
+class _UserLocationMarkerState extends State<_UserLocationMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _pulse;
+
+  static const _blue = Color(0xFF1A73E8);
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+    _pulse = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (_, _) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 40 * _pulse.value,
+            height: 40 * _pulse.value,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _blue.withValues(alpha: (1 - _pulse.value) * 0.35),
+            ),
+          ),
+          Container(
+            width: 20,
+            height: 20,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+          ),
+          Container(
+            width: 14,
+            height: 14,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: _blue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _MarkerPin extends StatelessWidget {
   const _MarkerPin({
@@ -344,8 +409,7 @@ class _MarkerPin extends StatelessWidget {
                   ),
                 ],
               ),
-              child:
-                  Icon(_icon(point.category), color: Colors.white, size: 18),
+              child: Icon(_icon(point.category), color: Colors.white, size: 18),
             ),
             CustomPaint(
               size: const Size(10, 6),
@@ -376,10 +440,6 @@ class _PinTail extends CustomPainter {
   bool shouldRepaint(_PinTail o) => o.color != color;
 }
 
-// =============================================================================
-// _Legend / _LegendRow
-// =============================================================================
-
 class _Legend extends StatelessWidget {
   const _Legend();
 
@@ -392,8 +452,7 @@ class _Legend extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.93),
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -409,8 +468,7 @@ class _Legend extends StatelessWidget {
               label: l10n.mapLegendDerma),
           const SizedBox(height: 4),
           _LegendRow(
-              color: AppColors.trustAidsCenter,
-              label: l10n.mapLegendAids),
+              color: AppColors.trustAidsCenter, label: l10n.mapLegendAids),
         ],
       ),
     );
@@ -439,10 +497,6 @@ class _LegendRow extends StatelessWidget {
   }
 }
 
-// =============================================================================
-// _FindMeButton
-// =============================================================================
-
 class _FindMeButton extends StatelessWidget {
   const _FindMeButton({required this.onTap});
   final VoidCallback onTap;
@@ -457,10 +511,6 @@ class _FindMeButton extends StatelessWidget {
     );
   }
 }
-
-// =============================================================================
-// _ErrorView
-// =============================================================================
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message, required this.onRetry});
