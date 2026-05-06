@@ -89,6 +89,8 @@
   "@testStartButton": {},
   "testFinishButton": "Завершить тест",
   "@testFinishButton": {},
+  "testAllQuestionsAnswered": "Все вопросы пройдены!",
+  "@testAllQuestionsAnswered": {},
   "testHistoryTitle": "История прохождений ({count})",
   "@testHistoryTitle": {
     "placeholders": {

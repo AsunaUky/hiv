@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:hiv/domain/entities/trust_points_entity.dart';
 import 'package:latlong2/latlong.dart';
 

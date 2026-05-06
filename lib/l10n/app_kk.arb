@@ -46,6 +46,7 @@
   "testPrivacyNote": "Барлық жауаптар анонимді және құпия. Деректер сақталмайды.",
   "testStartButton": "Тест тапсыру",
   "testFinishButton": "Тестті аяқтау",
+  "testAllQuestionsAnswered": "Барлық сұрақтарға жауап берілді!",
   "testHistoryTitle": "Өту тарихы ({count})",
   "@testHistoryTitle": {
     "placeholders": {

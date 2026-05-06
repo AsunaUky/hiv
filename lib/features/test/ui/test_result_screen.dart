@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_ext.dart';
-import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/features/test/bloc/test_cubit.dart';
 
@@ -30,7 +29,8 @@ class TestResultScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          onPressed: () => context.go(RouteNames.test),
+          onPressed: () => context.pop(),
+          // onPressed: () => context.go(RouteNames.test),
         ),
       ),
       body: SafeArea(
@@ -55,9 +55,9 @@ class TestResultScreen extends StatelessWidget {
                 child: Text(
                   completed.result.description,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -76,8 +76,11 @@ class TestResultScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => context.go(RouteNames.test),
-                  child: Text(context.locale.testResultRetry), // ← локализация
+                  onPressed: () {
+                    context
+                        .pop();
+                  },
+                  child: Text(context.locale.testResultRetry),
                 ),
               ),
             ],

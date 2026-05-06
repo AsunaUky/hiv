@@ -1,19 +1,26 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:hiv/core/services/collection_names.dart';
 import 'package:hiv/core/utils/logger.dart';
 
-
 /// Репозиторий для управления профилем пользователя.
+///
+/// Фото хранится только в Firestore (поле `photoUrl` в UserModel),
+/// НЕ в Firebase Auth и НЕ в Firebase Storage.
 class UserRepository {
   UserRepository._();
   static final UserRepository instance = UserRepository._();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   User? get _user => _auth.currentUser;
+
+  DocumentReference<Map<String, dynamic>> get _userDoc =>
+      _db.collection(CollectionNames.users).doc(_user!.uid);
 
   // ── Обновление имени ──────────────────────────────────────────
 
@@ -28,43 +35,23 @@ class UserRepository {
     }
   }
 
-  // ── Обновление фото ───────────────────────────────────────────
+  // ── Обновление фото (только в Firestore) ──────────────────────
 
+  /// Сохраняет фото как base64 в документе пользователя в Firestore.
   Future<String> uploadPhoto(File file) async {
     try {
-      final uid = _user!.uid;
-      final ref = _storage.ref().child('avatars/$uid.jpg');
-      await ref.putFile(file);
-      final url = await ref.getDownloadURL();
-      await _user?.updatePhotoURL(url);
-      await _user?.reload();
-      AppLogger.info('UserRepository: фото обновлено');
-      return url;
+      final bytes = await file.readAsBytes();
+      final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+
+      await _userDoc.set(
+        {'photoUrl': base64Image},
+        SetOptions(merge: true),
+      );
+
+      AppLogger.info('UserRepository: фото сохранено в Firestore');
+      return base64Image;
     } catch (e, s) {
       AppLogger.error('UserRepository: ошибка загрузки фото', error: e, stackTrace: s);
-      rethrow;
-    }
-  }
-
-  // ── Обновление email ──────────────────────────────────────────
-  // Требует повторной аутентификации если сессия старая
-
-  Future<void> updateEmail({
-    required String newEmail,
-    required String password,
-  }) async {
-    try {
-      final user = _user!;
-      // Повторная аутентификация
-      final credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: password,
-      );
-      await user.reauthenticateWithCredential(credential);
-      await user.verifyBeforeUpdateEmail(newEmail.trim());
-      AppLogger.info('UserRepository: письмо подтверждения отправлено');
-    } catch (e, s) {
-      AppLogger.error('UserRepository: ошибка обновления email', error: e, stackTrace: s);
       rethrow;
     }
   }
@@ -88,5 +75,22 @@ class UserRepository {
       AppLogger.error('UserRepository: ошибка обновления пароля', error: e, stackTrace: s);
       rethrow;
     }
+  }
+
+  // ── Получение photoUrl из Firestore ───────────────────────────
+
+  Future<String?> getPhotoUrl() async {
+    try {
+      final doc = await _userDoc.get();
+      return doc.data()?['photoUrl'] as String?;
+    } catch (e, s) {
+      AppLogger.error('UserRepository: ошибка получения фото', error: e, stackTrace: s);
+      return null;
+    }
+  }
+
+  /// Стрим изменений профиля пользователя из Firestore.
+  Stream<Map<String, dynamic>?> profileStream() {
+    return _userDoc.snapshots().map((snap) => snap.data());
   }
 }

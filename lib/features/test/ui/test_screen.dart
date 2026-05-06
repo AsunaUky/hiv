@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
-import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/theme/app_colors.dart';
-import 'package:hiv/domain/entities/test_entity.dart';
-import 'package:hiv/data/repositories/test_repository_impl.dart';
 import 'package:hiv/data/datasources/test_remote_datasource.dart';
+import 'package:hiv/data/repositories/test_repository_impl.dart';
+import 'package:hiv/domain/entities/test_entity.dart';
 import 'package:hiv/features/test/bloc/test_cubit.dart';
+import 'package:hiv/l10n/generated/app_localizations.dart';
+
+extension _ContextL10n on BuildContext {
+  AppLocalizations get l10n => AppLocalizations.of(this);
+}
 
 class TestScreen extends StatelessWidget {
   const TestScreen({super.key});
@@ -68,14 +72,18 @@ class _TestIntroPage extends StatefulWidget {
 }
 
 class _TestIntroPageState extends State<_TestIntroPage> {
-  List<Map<String, dynamic>> _history = [];
+  List<Map<String, dynamic>>? _history;
   bool _historyExpanded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadHistory();
-  }
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final cubit = context.read<TestCubit>();
+    if (cubit.state is TestCompleted) cubit.restart();
+  });
+  _loadHistory();
+}
 
   Future<void> _loadHistory() async {
     final history = await context.read<TestCubit>().loadHistory();
@@ -84,13 +92,10 @@ class _TestIntroPageState extends State<_TestIntroPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.locale;
+    final l = context.l10n;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -106,7 +111,7 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                     color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.health_and_safety_outlined,
                     color: AppColors.primary,
                     size: 40,
@@ -132,7 +137,7 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.lock_outline,
                       color: AppColors.primary,
                       size: 20,
@@ -148,78 +153,105 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                 ),
               ),
 
-              if (_history.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _historyExpanded = !_historyExpanded),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.history_rounded,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            l.testHistoryTitle(
-                              _history.length,
-                            ),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        AnimatedRotation(
-                          turns: _historyExpanded ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 250),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: AppColors.textHint,
-                          ),
-                        ),
-                      ],
+              // ── История прохождений — место зарезервировано всегда ────────
+              const SizedBox(height: 24),
+              _HistorySection(
+                history: _history,
+                expanded: _historyExpanded,
+                onToggle: () =>
+                    setState(() => _historyExpanded = !_historyExpanded),
+              ),
+
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: widget.onStart,
+                  child: Text(l.testStartButton),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  const _HistorySection({
+    required this.history,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final List<Map<String, dynamic>>? history;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+
+    if (history == null) {
+      return const SizedBox(height: 52);
+    }
+
+    if (history!.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onToggle,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.history_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l.testHistoryTitle(history!.length),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
-                AnimatedSize(
+                AnimatedRotation(
+                  turns: expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  child: _historyExpanded
-                      ? Column(
-                          children: _history
-                              .map((e) => _HistoryItem(entry: e))
-                              .toList(),
-                        )
-                      : const SizedBox.shrink(),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.textHint,
+                  ),
                 ),
               ],
-
-              const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: widget.onStart,
-            child: Text(l.testStartButton),
+            ),
           ),
         ),
-        const SizedBox(height: 16),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: expanded
+              ? Column(
+                  children: history!
+                      .map((e) => _HistoryItem(entry: e))
+                      .toList(),
+                )
+              : const SizedBox.shrink(),
+        ),
       ],
-    )
-   )
-    )
-  );
+    );
   }
 }
 
@@ -231,13 +263,13 @@ class _HistoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateTime.parse(entry['date'] as String);
     final riskLevel = entry['riskLevel'] as String;
+    final l = context.l10n;
 
     final label = switch (riskLevel) {
-      'high' => context.locale.testRiskHigh,
-      'moderate' => context.locale.testRiskModerate,
-      _ => context.locale.testRiskMinimal,
+      'high' => l.testRiskHigh,
+      'moderate' => l.testRiskModerate,
+      _ => l.testRiskMinimal,
     };
-
     final color = switch (riskLevel) {
       'high' => Colors.red,
       'moderate' => Colors.orange,
@@ -307,8 +339,8 @@ class _TestQuestionsPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
+            context.pop();
             if (state.currentQuestionIndex > 0) {
-              // Шаг назад
               context.read<TestCubit>().previousQuestion();
             } else {
               context.read<TestCubit>().restart();
@@ -323,7 +355,6 @@ class _TestQuestionsPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // ─── Анимированный прогресс-бар ───
           TweenAnimationBuilder<double>(
             tween: Tween(
               begin: 0,
@@ -336,12 +367,10 @@ class _TestQuestionsPage extends StatelessWidget {
             builder: (_, value, _) => LinearProgressIndicator(
               value: value,
               backgroundColor: AppColors.surface,
-              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
               minHeight: 4,
             ),
           ),
-
-          // ─── Заголовок блока ───
           if (question != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -349,7 +378,7 @@ class _TestQuestionsPage extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   state.currentBlockTitle,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,
@@ -357,7 +386,6 @@ class _TestQuestionsPage extends StatelessWidget {
                 ),
               ),
             ),
-
           Expanded(
             child: isLastAnswered
                 ? Center(
@@ -366,14 +394,14 @@ class _TestQuestionsPage extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.check_circle_outline_rounded,
                             color: AppColors.primary,
                             size: 64,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Все вопросы пройдены!',
+                            context.l10n.testAllQuestionsAnswered,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 32),
@@ -382,7 +410,7 @@ class _TestQuestionsPage extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () =>
                                   context.read<TestCubit>().finish(),
-                              child: Text(context.locale.testFinishButton),
+                              child: Text(context.l10n.testFinishButton),
                             ),
                           ),
                         ],
@@ -402,8 +430,6 @@ class _TestQuestionsPage extends StatelessWidget {
     );
   }
 }
-
-// ─── Один вопрос ─────────────────────────────────────────────────
 
 class _SingleQuestionView extends StatelessWidget {
   const _SingleQuestionView({

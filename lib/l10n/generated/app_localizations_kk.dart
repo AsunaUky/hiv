@@ -144,6 +144,9 @@ class AppLocalizationsKk extends AppLocalizations {
   String get testFinishButton => 'Тестті аяқтау';
 
   @override
+  String get testAllQuestionsAnswered => 'Барлық сұрақтарға жауап берілді!';
+
+  @override
   String testHistoryTitle(int count) {
     return 'Өту тарихы ($count)';
   }

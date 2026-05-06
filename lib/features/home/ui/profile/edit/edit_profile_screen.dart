@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,28 +24,30 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _repo = UserRepository.instance;
 
   late final TextEditingController _nameCtrl;
   final _currPassCtrl = TextEditingController();
-  final _newPassCtrl = TextEditingController();
+  final _newPassCtrl  = TextEditingController();
   final _confPassCtrl = TextEditingController();
 
   bool _obscureCurr = true;
-  bool _obscureNew = true;
+  bool _obscureNew  = true;
   bool _obscureConf = true;
 
-  File? _pickedImage;
-  bool _saving = false;
-  bool _uploadingPhoto = false;
+  File?   _pickedImage;
+  String? _firestorePhotoUrl; // base64 из Firestore
+  bool    _saving  = false;
+  bool    _picking = false;
 
-  User? get _user => FirebaseAuth.instance.currentUser;
+  User? get _user    => FirebaseAuth.instance.currentUser;
   bool get _hasEmail => _user?.email != null && !(_user?.isAnonymous ?? true);
-  final _repo = UserRepository.instance;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: _user?.displayName ?? '');
+    _loadPhoto();
   }
 
   @override
@@ -55,39 +59,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _pickPhoto() async {
-    final status = await PermissionService.requestGalleryPermission();
-    if (status.isPermanentlyDenied) {
-      if (mounted) _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
-      await PermissionService.openSettings();
-      return;
-    }
+  Future<void> _loadPhoto() async {
+    final url = await _repo.getPhotoUrl();
+    if (mounted) setState(() => _firestorePhotoUrl = url);
+  }
 
+  Future<void> _pickPhoto() async {
+    if (_picking) return;
+    _picking = true;
     try {
+      final status = await PermissionService.requestGalleryPermission();
+      if (!status.isGranted && !status.isLimited) {
+        if (status.isPermanentlyDenied && mounted) {
+          _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
+          await PermissionService.openSettings();
+        }
+        return;
+      }
       final picked = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         maxWidth: 512,
         maxHeight: 512,
         imageQuality: 85,
       );
-      if (picked == null) return; // закрыл без выбора — норма
+      if (picked == null) return;
       setState(() => _pickedImage = File(picked.path));
-    } catch (_) { // системная ошибка или отмена — не беспокоим пользователя
+    } finally {
+      _picking = false;
     }
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _saving = true);
-    final l10n = context.l10n;
 
     try {
       if (_pickedImage != null) {
-        setState(() => _uploadingPhoto = true);
-        await _repo.uploadPhoto(_pickedImage!);
-        await _user?.reload();
-        if (mounted) setState(() => _uploadingPhoto = false);
+        final url = await _repo.uploadPhoto(_pickedImage!);
+        if (mounted) setState(() => _firestorePhotoUrl = url);
       }
 
       final newName = _nameCtrl.text.trim();
@@ -103,53 +112,64 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       if (mounted) {
-        _showSnackBar(l10n.editSuccess);
+        _showSnackBar(context.l10n.editSuccess);
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) _showSnackBar(_mapError(e.code, l10n), isError: true);
+      if (mounted) _showSnackBar(_mapError(e.code), isError: true);
     } catch (_) {
-      if (mounted) _showSnackBar(l10n.editErrorSave, isError: true);
+      if (mounted) _showSnackBar(context.l10n.editErrorSave, isError: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-          _uploadingPhoto = false;
-        });
-      }
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? AppColors.error : AppColors.primary,
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 
-  String _mapError(String code, AppLocalizations l10n) => switch (code) {
-        'wrong-password' || 'invalid-credential' => l10n.editWrongPassword,
-        'weak-password' => l10n.editWeakPassword,
-        'requires-recent-login' => l10n.editRecentLogin,
-        _ => '${l10n.commonError}: $code',
-      };
+  String _mapError(String code) {
+    final l10n = context.l10n;
+    return switch (code) {
+      'wrong-password' || 'invalid-credential' => l10n.editWrongPassword,
+      'weak-password'       => l10n.editWeakPassword,
+      'requires-recent-login' => l10n.editRecentLogin,
+      _ => '${l10n.commonError}: $code',
+    };
+  }
+
+  // ── Аватар ────────────────────────────────────────────────────
+
+  ImageProvider? get _avatarImage {
+    if (_pickedImage != null) return FileImage(_pickedImage!);
+    if (_firestorePhotoUrl != null) {
+      // base64-строка из Firestore
+      if (_firestorePhotoUrl!.startsWith('data:')) {
+        final base64Str = _firestorePhotoUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64Str));
+      }
+      return NetworkImage(_firestorePhotoUrl!);
+    }
+    return null;
+  }
+
+  String get _avatarInitial {
+    final name = (_user?.displayName ?? '').trim();
+    return name.isEmpty ? '?' : name[0].toUpperCase();
+  }
+
+  // ── Build ─────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final photoUrl = _user?.photoURL;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.editTitle),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.textPrimary,
-      ),
+      appBar: AppBar(title: Text(l10n.editTitle)),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -163,102 +183,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 24),
-                      Center(
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 56,
-                              backgroundColor: AppColors.primary,
-                              backgroundImage: _pickedImage != null
-                                  ? FileImage(_pickedImage!)
-                                  : (photoUrl != null
-                                      ? NetworkImage(photoUrl) as ImageProvider
-                                      : null),
-                              child: (_pickedImage == null && photoUrl == null)
-                                  ? Text(
-                                      ((_user?.displayName ?? '').trim().isEmpty
-                                          ? '?'
-                                          : _user!.displayName![0].toUpperCase()),
-                                      style: const TextStyle(
-                                        fontSize: 40,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            if (_uploadingPhoto)
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black38,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: _saving ? null : _pickPhoto,
-                                child: Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.photo_library_outlined,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      _AvatarPicker(
+                        image: _avatarImage,
+                        initial: _avatarInitial,
+                        onTap: _saving ? null : _pickPhoto,
                       ),
                       const SizedBox(height: 28),
-                      _Label(text: l10n.editNameLabel),
+                      _SectionLabel(l10n.editNameLabel),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameCtrl,
                         keyboardType: TextInputType.name,
                         textCapitalization: TextCapitalization.words,
                         validator: AppValidators.name,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary, fontSize: 15),
-                        decoration: _inputDec(
-                          l10n.editNamePlaceholder,
-                          Icons.person_outline_rounded,
+                        decoration: InputDecoration(
+                          hintText: l10n.editNamePlaceholder,
+                          prefixIcon: const Icon(Icons.person_outline_rounded),
                         ),
                       ),
                       if (_hasEmail) ...[
                         const SizedBox(height: 24),
-                        _Label(text: l10n.editChangePasswordLabel),
+                        _SectionLabel(l10n.editChangePasswordLabel),
                         const SizedBox(height: 8),
                         _PassField(
                           controller: _currPassCtrl,
                           hint: l10n.editCurrentPassword,
                           obscure: _obscureCurr,
-                          onToggle: () =>
-                              setState(() => _obscureCurr = !_obscureCurr),
+                          onToggle: () => setState(() => _obscureCurr = !_obscureCurr),
                           validator: (v) {
                             if (_newPassCtrl.text.isEmpty) return null;
-                            if (v == null || v.isEmpty) {
-                              return l10n.editCurrentPassword;
-                            }
+                            if (v == null || v.isEmpty) return l10n.editCurrentPassword;
                             return null;
                           },
                         ),
@@ -267,25 +221,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _newPassCtrl,
                           hint: l10n.editNewPassword,
                           obscure: _obscureNew,
-                          onToggle: () =>
-                              setState(() => _obscureNew = !_obscureNew),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return null;
-                            return AppValidators.password(v);
-                          },
+                          onToggle: () => setState(() => _obscureNew = !_obscureNew),
+                          validator: (v) => v == null || v.isEmpty ? null : AppValidators.password(v),
                         ),
                         const SizedBox(height: 10),
                         _PassField(
                           controller: _confPassCtrl,
                           hint: l10n.editConfirmPassword,
                           obscure: _obscureConf,
-                          onToggle: () =>
-                              setState(() => _obscureConf = !_obscureConf),
-                          validator: (v) {
-                            if (_newPassCtrl.text.isEmpty) return null;
-                            return AppValidators.confirmPassword(
-                                v, _newPassCtrl.text);
-                          },
+                          onToggle: () => setState(() => _obscureConf = !_obscureConf),
+                          validator: (v) => _newPassCtrl.text.isEmpty
+                              ? null
+                              : AppValidators.confirmPassword(v, _newPassCtrl.text),
                         ),
                       ],
                       const SizedBox(height: 16),
@@ -299,10 +246,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onPressed: _saving ? null : _save,
                   child: _saving
                       ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2.5),
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                         )
                       : Text(l10n.commonSave),
                 ),
@@ -313,42 +258,62 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
   }
-
-  InputDecoration _inputDec(String hint, IconData icon) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textHint),
-        prefixIcon: Icon(icon, color: AppColors.textHint, size: 20),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.error)),
-      );
 }
 
-class _Label extends StatelessWidget {
-  const _Label({required this.text});
+// ── Приватные виджеты ─────────────────────────────────────────────────────────
+
+class _AvatarPicker extends StatelessWidget {
+  const _AvatarPicker({
+    required this.image,
+    required this.initial,
+    required this.onTap,
+  });
+
+  final ImageProvider? image;
+  final String         initial;
+  final VoidCallback?  onTap;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Stack(
+      children: [
+        CircleAvatar(
+          radius: 56,
+          backgroundColor: AppColors.primary,
+          backgroundImage: image,
+          child: image == null
+              ? Text(initial, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: Colors.white))
+              : null,
+        ),
+        Positioned(
+          bottom: 0, right: 0,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
   final String text;
 
   @override
   Widget build(BuildContext context) => Text(
-        text.toUpperCase(),
-        style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textHint,
-            letterSpacing: 1.2),
-      );
+    text.toUpperCase(),
+    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textHint, letterSpacing: 1.2),
+  );
 }
 
 class _PassField extends StatelessWidget {
@@ -360,49 +325,24 @@ class _PassField extends StatelessWidget {
     this.validator,
   });
 
-  final TextEditingController controller;
-  final String hint;
-  final bool obscure;
-  final VoidCallback onToggle;
-  final String? Function(String?)? validator;
+  final TextEditingController        controller;
+  final String                       hint;
+  final bool                         obscure;
+  final VoidCallback                 onToggle;
+  final String? Function(String?)?   validator;
 
   @override
   Widget build(BuildContext context) => TextFormField(
-        controller: controller,
-        obscureText: obscure,
-        validator: validator,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: AppColors.textHint),
-          prefixIcon: const Icon(Icons.lock_outline_rounded,
-              color: AppColors.textHint, size: 20),
-          suffixIcon: IconButton(
-            icon: Icon(
-              obscure
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-            onPressed: onToggle,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.divider)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.divider)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-          errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error)),
-        ),
-      );
+    controller: controller,
+    obscureText: obscure,
+    validator: validator,
+    decoration: InputDecoration(
+      hintText: hint,
+      prefixIcon: const Icon(Icons.lock_outline_rounded),
+      suffixIcon: IconButton(
+        icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+        onPressed: onToggle,
+      ),
+    ),
+  );
 }

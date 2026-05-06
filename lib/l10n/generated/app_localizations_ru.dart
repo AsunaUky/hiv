@@ -146,6 +146,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get testFinishButton => 'Завершить тест';
 
   @override
+  String get testAllQuestionsAnswered => 'Все вопросы пройдены!';
+
+  @override
   String testHistoryTitle(int count) {
     return 'История прохождений ($count)';
   }

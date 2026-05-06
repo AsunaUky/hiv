@@ -362,6 +362,12 @@ abstract class AppLocalizations {
   /// **'Завершить тест'**
   String get testFinishButton;
 
+  /// No description provided for @testAllQuestionsAnswered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все вопросы пройдены!'**
+  String get testAllQuestionsAnswered;
+
   /// No description provided for @testHistoryTitle.
   ///
   /// In ru, this message translates to:
