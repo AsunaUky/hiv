@@ -332,6 +332,84 @@ abstract class AppLocalizations {
   /// **'Информация'**
   String get infoTitle;
 
+  /// No description provided for @validatorEnterEmail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите email'**
+  String get validatorEnterEmail;
+
+  /// No description provided for @validatorInvalidEmail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Некорректный email'**
+  String get validatorInvalidEmail;
+
+  /// No description provided for @validatorEnterPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите пароль'**
+  String get validatorEnterPassword;
+
+  /// No description provided for @validatorMinPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Минимум 8 символов'**
+  String get validatorMinPassword;
+
+  /// No description provided for @validatorPasswordNeedsLetter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте хотя бы одну букву'**
+  String get validatorPasswordNeedsLetter;
+
+  /// No description provided for @validatorPasswordNeedsDigit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте хотя бы одну цифру'**
+  String get validatorPasswordNeedsDigit;
+
+  /// No description provided for @validatorRepeatPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторите пароль'**
+  String get validatorRepeatPassword;
+
+  /// No description provided for @validatorPasswordMismatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароли не совпадают'**
+  String get validatorPasswordMismatch;
+
+  /// No description provided for @validatorEnterName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите имя'**
+  String get validatorEnterName;
+
+  /// No description provided for @validatorNameTooShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком короткое имя'**
+  String get validatorNameTooShort;
+
+  /// No description provided for @validatorNameTooLong.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не более 20 символов'**
+  String get validatorNameTooLong;
+
+  /// No description provided for @validatorNameNoDigits.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя не должно содержать цифры'**
+  String get validatorNameNoDigits;
+
+  /// No description provided for @validatorNameInvalidChars.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя содержит недопустимые символы'**
+  String get validatorNameInvalidChars;
+
   /// No description provided for @testTitle.
   ///
   /// In ru, this message translates to:

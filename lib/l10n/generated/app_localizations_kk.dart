@@ -127,6 +127,45 @@ class AppLocalizationsKk extends AppLocalizations {
   String get infoTitle => 'Ақпарат';
 
   @override
+  String get validatorEnterEmail => 'Email енгізіңіз';
+
+  @override
+  String get validatorInvalidEmail => 'Email дұрыс емес';
+
+  @override
+  String get validatorEnterPassword => 'Құпиясөзді енгізіңіз';
+
+  @override
+  String get validatorMinPassword => 'Кемінде 8 таңба';
+
+  @override
+  String get validatorPasswordNeedsLetter => 'Кемінде бір әріп қосыңыз';
+
+  @override
+  String get validatorPasswordNeedsDigit => 'Кемінде бір сан қосыңыз';
+
+  @override
+  String get validatorRepeatPassword => 'Құпиясөзді қайталаңыз';
+
+  @override
+  String get validatorPasswordMismatch => 'Құпиясөздер сәйкес келмейді';
+
+  @override
+  String get validatorEnterName => 'Атыңызды енгізіңіз';
+
+  @override
+  String get validatorNameTooShort => 'Аты тым қысқа';
+
+  @override
+  String get validatorNameTooLong => '20 таңбадан аспауы керек';
+
+  @override
+  String get validatorNameNoDigits => 'Атта сандар болмауы керек';
+
+  @override
+  String get validatorNameInvalidChars => 'Атта жарамсыз таңбалар бар';
+
+  @override
   String get testTitle => 'Тәуекел бағалау тесті';
 
   @override

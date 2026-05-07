@@ -129,6 +129,45 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoTitle => 'Информация';
 
   @override
+  String get validatorEnterEmail => 'Введите email';
+
+  @override
+  String get validatorInvalidEmail => 'Некорректный email';
+
+  @override
+  String get validatorEnterPassword => 'Введите пароль';
+
+  @override
+  String get validatorMinPassword => 'Минимум 8 символов';
+
+  @override
+  String get validatorPasswordNeedsLetter => 'Добавьте хотя бы одну букву';
+
+  @override
+  String get validatorPasswordNeedsDigit => 'Добавьте хотя бы одну цифру';
+
+  @override
+  String get validatorRepeatPassword => 'Повторите пароль';
+
+  @override
+  String get validatorPasswordMismatch => 'Пароли не совпадают';
+
+  @override
+  String get validatorEnterName => 'Введите имя';
+
+  @override
+  String get validatorNameTooShort => 'Слишком короткое имя';
+
+  @override
+  String get validatorNameTooLong => 'Не более 20 символов';
+
+  @override
+  String get validatorNameNoDigits => 'Имя не должно содержать цифры';
+
+  @override
+  String get validatorNameInvalidChars => 'Имя содержит недопустимые символы';
+
+  @override
   String get testTitle => 'Тест оценки риска';
 
   @override

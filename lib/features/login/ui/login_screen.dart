@@ -6,6 +6,7 @@ import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
+import 'package:hiv/l10n/generated/app_localizations.dart';
 import 'package:hiv/ui_kit/auth_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -103,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               hint: 'Email',
                               prefixIcon: Icons.mail_outline_rounded,
                               keyboardType: TextInputType.emailAddress,
-                              validator: AppValidators.email,
+                              validator: (value) => AppValidators.email(value, AppLocalizations.of(context)),
                             ),
                             const SizedBox(height: 14),
                             AppTextField(
@@ -116,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onTap: () =>
                                     setState(() => _obscure = !_obscure),
                               ),
-                              validator: AppValidators.loginPassword,
+                              validator: (value) => AppValidators.loginPassword(value, AppLocalizations.of(context)),
                             ),
                           ],
                         ),

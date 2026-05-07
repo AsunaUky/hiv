@@ -40,6 +40,20 @@
   "editRecentLogin": "Шығып, қайта кіріңіз",
   "infoTitle": "Ақпарат",
 
+  "validatorEnterEmail": "Email енгізіңіз",
+  "validatorInvalidEmail": "Email дұрыс емес",
+  "validatorEnterPassword": "Құпиясөзді енгізіңіз",
+  "validatorMinPassword": "Кемінде 8 таңба",
+  "validatorPasswordNeedsLetter": "Кемінде бір әріп қосыңыз",
+  "validatorPasswordNeedsDigit": "Кемінде бір сан қосыңыз",
+  "validatorRepeatPassword": "Құпиясөзді қайталаңыз",
+  "validatorPasswordMismatch": "Құпиясөздер сәйкес келмейді",
+  "validatorEnterName": "Атыңызды енгізіңіз",
+  "validatorNameTooShort": "Аты тым қысқа",
+  "validatorNameTooLong": "20 таңбадан аспауы керек",
+  "validatorNameNoDigits": "Атта сандар болмауы керек",
+  "validatorNameInvalidChars": "Атта жарамсыз таңбалар бар",
+
 
   "testTitle": "Тәуекел бағалау тесті",
   "testDescription": "10 сұраққа жауап беріңіз — жүйе тәуекел деңгейін бағалап, жеке ұсыныс береді.",

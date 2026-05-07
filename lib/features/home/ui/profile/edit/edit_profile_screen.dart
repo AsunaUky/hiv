@@ -195,7 +195,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         controller: _nameCtrl,
                         keyboardType: TextInputType.name,
                         textCapitalization: TextCapitalization.words,
-                        validator: AppValidators.name,
+                        validator: (v) => AppValidators.name(v, l10n),
                         decoration: InputDecoration(
                           hintText: l10n.editNamePlaceholder,
                           prefixIcon: const Icon(Icons.person_outline_rounded),
@@ -222,7 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           hint: l10n.editNewPassword,
                           obscure: _obscureNew,
                           onToggle: () => setState(() => _obscureNew = !_obscureNew),
-                          validator: (v) => v == null || v.isEmpty ? null : AppValidators.password(v),
+                          validator: (v) => v == null || v.isEmpty ? null : AppValidators.password(v, context.l10n),
                         ),
                         const SizedBox(height: 10),
                         _PassField(
@@ -232,7 +232,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onToggle: () => setState(() => _obscureConf = !_obscureConf),
                           validator: (v) => _newPassCtrl.text.isEmpty
                               ? null
-                              : AppValidators.confirmPassword(v, _newPassCtrl.text),
+                              : AppValidators.confirmPassword(v, _newPassCtrl.text, context.l10n),
                         ),
                       ],
                       const SizedBox(height: 16),

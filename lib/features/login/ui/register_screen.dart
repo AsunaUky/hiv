@@ -5,6 +5,7 @@ import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
+import 'package:hiv/l10n/generated/app_localizations.dart';
 import 'package:hiv/ui_kit/auth_widgets.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -92,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               controller: _nameCtrl,
                               hint: 'Ваше имя',
                               prefixIcon: Icons.person_outline_rounded,
-                              validator: AppValidators.name,
+                              validator: (value) => AppValidators.name(value, AppLocalizations.of(context)),
                             ),
                             const SizedBox(height: 14),
                             AppTextField(
@@ -100,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               hint: 'Email',
                               prefixIcon: Icons.mail_outline_rounded,
                               keyboardType: TextInputType.emailAddress,
-                              validator: AppValidators.email,
+                              validator: (value) => AppValidators.email(value, AppLocalizations.of(context)),
                             ),
                             const SizedBox(height: 14),
                             AppTextField(
@@ -112,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscure: _obscure,
                                 onTap: () => setState(() => _obscure = !_obscure),
                               ),
-                              validator: AppValidators.password,
+                              validator: (value) => AppValidators.password(value, AppLocalizations.of(context)),
                             ),
                             const SizedBox(height: 14),
                             AppTextField(
@@ -124,7 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscure: _obscure2,
                                 onTap: () => setState(() => _obscure2 = !_obscure2),
                               ),
-                              validator: (v) => AppValidators.confirmPassword(v, _passCtrl.text),
+                              validator: (v) => AppValidators.confirmPassword(v, _passCtrl.text, AppLocalizations.of(context)),
                             ),
                             const SizedBox(height: 16),
                           ],
