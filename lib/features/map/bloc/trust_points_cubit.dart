@@ -11,10 +11,10 @@ class TrustPointsCubit extends Cubit<TrustPointsState> {
   /// Первичная загрузка (или смена языка без повторного сетевого запроса —
   /// кэш живёт в [TrustPointRepositoryImpl]).
   Future<void> load(String locale) async {
+  if (state is TrustPointsLoaded) return;
   emit(TrustPointsLoading());
   try {
     final points = await _repository.getPoints(locale);
-    // Фильтруем точки с невалидными координатами ещё до UI
     final valid = points.where((p) =>
       p.location.latitude.isFinite &&
       p.location.longitude.isFinite

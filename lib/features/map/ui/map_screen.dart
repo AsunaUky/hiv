@@ -9,11 +9,11 @@ import 'package:hiv/features/map/ui/widgets/trust_point_card.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/locale/locale_cubit.dart';
-import '../../../core/services/permission_service.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../domain/entities/trust_points_entity.dart';
-import '../../../l10n/generated/app_localizations.dart';
+import '../../../../core/locale/locale_cubit.dart';
+import '../../../../core/services/permission_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/trust_points_entity.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 extension _L10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);

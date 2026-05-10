@@ -1,11 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/theme/app_colors.dart';
-import 'package:hiv/data/datasources/test_remote_datasource.dart';
-import 'package:hiv/data/repositories/test_repository_impl.dart';
 import 'package:hiv/domain/entities/test_entity.dart';
 import 'package:hiv/features/test/bloc/test_cubit.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
@@ -16,17 +12,8 @@ extension _ContextL10n on BuildContext {
 
 class TestScreen extends StatelessWidget {
   const TestScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    final locale = context.read<LocaleCubit>().state.languageCode;
-    return BlocProvider(
-      create: (_) => TestCubit(
-        TestRepositoryImpl(TestRemoteDataSource(FirebaseFirestore.instance)),
-      )..load(locale),
-      child: const _TestView(),
-    );
-  }
+  Widget build(BuildContext context) => const _TestView();
 }
 
 class _TestView extends StatelessWidget {
@@ -37,7 +24,13 @@ class _TestView extends StatelessWidget {
     return BlocConsumer<TestCubit, TestState>(
       listener: (context, state) {
         if (state is TestCompleted) {
-          context.push('/test-result', extra: state);
+          // fix P2-01: restart cubit as soon as the result screen is popped,
+          // so the builder always sees TestReady on return — no spinner.
+          context.push('/test-result', extra: state).then((_) {
+            if (context.mounted) {
+              context.read<TestCubit>().restart();
+            }
+          });
         }
       },
       builder: (context, state) {
@@ -76,14 +69,10 @@ class _TestIntroPageState extends State<_TestIntroPage> {
   bool _historyExpanded = false;
 
   @override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final cubit = context.read<TestCubit>();
-    if (cubit.state is TestCompleted) cubit.restart();
-  });
-  _loadHistory();
-}
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
 
   Future<void> _loadHistory() async {
     final history = await context.read<TestCubit>().loadHistory();
@@ -339,7 +328,8 @@ class _TestQuestionsPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
-            context.pop();
+            // fix P2-04: removed dead context.pop() — this screen lives inside
+            // the ShellRoute tab, there is no route to pop. Only update cubit state.
             if (state.currentQuestionIndex > 0) {
               context.read<TestCubit>().previousQuestion();
             } else {

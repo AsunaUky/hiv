@@ -10,28 +10,29 @@ class TestCubit extends Cubit<TestState> {
   final TestRepository _repository;
   TestCubit(this._repository) : super(TestInitial());
 
-  Future<void> load(String locale) async {
-  emit(TestLoading());
-  try {
-    final blocks = await _repository.getBlocks(locale);
-    final resultsLogic = await _repository.getResultsLogic(locale);
-    _cachedReady = TestReady(blocks: blocks, resultsLogic: resultsLogic);
-    emit(_cachedReady!);
-  } catch (e) {
-    emit(TestError(e.toString()));
-  }
-}
+  TestReady? _cachedReady; // кэш загруженных данных
 
-void restart() {
-  final current = state;
-  if (current is TestCompleted) {
-  if (_cachedReady != null) {
-    emit(_cachedReady!);
-  } else {
-    emit(TestInitial());
+  Future<void> load(String locale) async {
+    emit(TestLoading());
+    try {
+      final blocks = await _repository.getBlocks(locale);
+      final resultsLogic = await _repository.getResultsLogic(locale);
+      _cachedReady = TestReady(blocks: blocks, resultsLogic: resultsLogic);
+      emit(_cachedReady!);
+    } catch (e) {
+      emit(TestError(e.toString()));
+    }
   }
-}
-}
+
+  // fix P2-02: removed `if (current is TestCompleted)` guard — restart() must
+  // also work from TestInProgress (called from Q1 back button).
+  void restart() {
+    if (_cachedReady != null) {
+      emit(_cachedReady!);
+    } else {
+      emit(TestInitial());
+    }
+  }
 
   void startTest() {
     final current = state;
@@ -136,7 +137,4 @@ void restart() {
       };
     }).toList();
   }
-
-  TestReady? _cachedReady; // кэш загруженных данных
-
 }

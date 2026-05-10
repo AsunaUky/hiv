@@ -1,6 +1,6 @@
 import 'package:hiv/data/datasources/article_remote_datasource.dart';
 import 'package:hiv/domain/entities/article_entity.dart';
-import 'package:hiv/domain/entities/article_repository.dart';
+import 'package:hiv/domain/repositories/article_repository.dart';
 
 class ArticleRepositoryImpl implements ArticleRepository {
   final ArticleRemoteDataSource _dataSource;

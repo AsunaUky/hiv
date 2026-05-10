@@ -4,12 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/locale/locale_cubit.dart';
 
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
+import 'package:hiv/data/datasources/test_remote_datasource.dart';
 import 'package:hiv/data/datasources/trust_points_datasource.dart';
+import 'package:hiv/data/repositories/test_repository_impl.dart';
 import 'package:hiv/data/repositories/trust_point_repository_impl.dart';
 import 'package:hiv/features/map/bloc/trust_points_cubit.dart';
+import 'package:hiv/features/test/bloc/test_cubit.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
 
 class HomeShell extends StatelessWidget {
@@ -50,9 +54,16 @@ class HomeShell extends StatelessWidget {
             ),
           ),
         ),
-        // Добавьте сюда другие кубиты уровня Shell, если понадобятся.
-        // Например TestCubit, если хотите сохранять его состояние между табами:
-        // BlocProvider<TestCubit>(create: (_) => TestCubit(...)),
+        BlocProvider<TestCubit>(
+          create: (ctx) {
+            final locale = ctx.read<LocaleCubit>().state.languageCode;
+            return TestCubit(
+              TestRepositoryImpl(
+                TestRemoteDataSource(FirebaseFirestore.instance),
+              ),
+            )..load(locale);
+          },
+        ),
       ],
       child: Scaffold(
         body: child,
