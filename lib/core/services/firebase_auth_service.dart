@@ -19,10 +19,6 @@ class FirebaseAuthService {
 
   // ── Email / Password ──────────────────────────────────────────
 
-  /// Вход по email и паролю.
-  ///
-  /// Перехватывает [FirebaseAuthException] и пробрасывает
-  /// [AuthException] с понятным текстом на русском языке.
   Future<UserCredential> signInWithEmailAndPassword(
     String email,
     String password,
@@ -40,13 +36,10 @@ class FirebaseAuthService {
     }
   }
 
-  /// Маппинг кодов Firebase → понятные сообщения для пользователя.
   static String _mapSignInError(String code) {
     switch (code) {
       case 'user-not-found':
       case 'invalid-credential':
-        // invalid-credential = Firebase v10+ заменяет user-not-found
-        // когда email не зарегистрирован
         return 'Аккаунт с таким email не найден. Проверьте данные или зарегистрируйтесь.';
       case 'wrong-password':
         return 'Неверный пароль. Попробуйте ещё раз.';
@@ -63,7 +56,6 @@ class FirebaseAuthService {
     }
   }
 
-  /// Регистрация по email и паролю.
   Future<UserCredential> createUserWithEmailAndPassword(
     String email,
     String password,
@@ -108,8 +100,6 @@ class FirebaseAuthService {
 
     await initialize(serverClientId: serverClientId);
 
-    // Сбрасываем предыдущую сессию Google ДО подписки на события,
-    // иначе событие SignOut от disconnect() завершает completer раньше времени.
     try {
       await _googleSignIn.disconnect();
     } catch (_) {}
@@ -117,7 +107,6 @@ class FirebaseAuthService {
     final completer = Completer<UserCredential?>();
     late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
 
-    // Подписываемся ПОСЛЕ disconnect — теперь не поймаем ложный SignOut.
     subscription = _googleSignIn.authenticationEvents.listen(
       (event) async {
         try {
@@ -160,7 +149,6 @@ class FirebaseAuthService {
     return completer.future;
   }
 
-  /// Выход — сбрасываем Firebase и Google сессию.
   Future<void> signOut() async {
     try {
       await Future.wait([
@@ -175,66 +163,90 @@ class FirebaseAuthService {
   }
 
   /// Удаление аккаунта.
+  ///
+  /// fix P2-01: определяем провайдера через providerData, а не через
+  /// наличие SERVER_CLIENT_ID в .env. Google flow запускается только
+  /// для Google-пользователей. Email/password и анонимные аккаунты
+  /// удаляются напрямую (Firebase бросит requires-recent-login если нужно).
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    // Проверяем: вошёл ли пользователь через Google
+    final isGoogleUser = user.providerData.any(
+      (p) => p.providerId == GoogleAuthProvider.PROVIDER_ID,
+    );
+
+    if (!isGoogleUser) {
+      // Email/password или анонимный аккаунт — удаляем напрямую.
+      // Firebase сам бросит FirebaseAuthException(requires-recent-login)
+      // если сессия устарела — это уже обрабатывается в AppBloc.
+      try {
+        await user.delete();
+        AppLogger.info('Delete Account: аккаунт удалён (email/anonymous)');
+      } on FirebaseAuthException catch (e) {
+        AppLogger.error('Delete Account: ошибка', error: e);
+        rethrow;
+      }
+      return;
+    }
+
+    // Google-пользователь: повторная аутентификация через Google
     try {
       final serverClientId = dotenv.env['SERVER_CLIENT_ID'];
-      if (serverClientId != null) {
-        await initialize(serverClientId: serverClientId);
-        try {
-          await _googleSignIn.disconnect();
-        } catch (_) {}
+      if (serverClientId == null) throw Exception('Server client is empty!');
 
-        final completer = Completer<void>();
-        late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
+      await initialize(serverClientId: serverClientId);
+      try {
+        await _googleSignIn.disconnect();
+      } catch (_) {}
 
-        subscription = _googleSignIn.authenticationEvents.listen(
-          (event) async {
-            try {
-              switch (event) {
-                case GoogleSignInAuthenticationEventSignIn():
-                  final idToken = event.user.authentication.idToken;
-                  final credential = GoogleAuthProvider.credential(idToken: idToken);
-                  await user.reauthenticateWithCredential(credential);
-                  await _googleSignIn.signOut().catchError((_) {});
-                  await user.delete();
-                  AppLogger.info('Delete Account: аккаунт удалён');
-                  if (!completer.isCompleted) completer.complete();
+      final completer = Completer<void>();
+      late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
 
-                case GoogleSignInAuthenticationEventSignOut():
-                  if (!completer.isCompleted) {
-                    completer.completeError(
-                      AuthException('Необходимо войти через Google для подтверждения.'),
-                    );
-                  }
-              }
-            } catch (e) {
-              if (!completer.isCompleted) completer.completeError(e);
-            } finally {
-              await subscription.cancel();
+      subscription = _googleSignIn.authenticationEvents.listen(
+        (event) async {
+          try {
+            switch (event) {
+              case GoogleSignInAuthenticationEventSignIn():
+                final idToken = event.user.authentication.idToken;
+                final credential =
+                    GoogleAuthProvider.credential(idToken: idToken);
+                await user.reauthenticateWithCredential(credential);
+                await _googleSignIn.signOut().catchError((_) {});
+                await user.delete();
+                AppLogger.info('Delete Account: аккаунт удалён (Google)');
+                if (!completer.isCompleted) completer.complete();
+
+              case GoogleSignInAuthenticationEventSignOut():
+                if (!completer.isCompleted) {
+                  completer.completeError(
+                    AuthException(
+                        'Необходимо войти через Google для подтверждения.'),
+                  );
+                }
             }
-          },
-          onError: (Object error) {
-            if (!completer.isCompleted) completer.completeError(error);
-            subscription.cancel();
-          },
-        );
+          } catch (e) {
+            if (!completer.isCompleted) completer.completeError(e);
+          } finally {
+            await subscription.cancel();
+          }
+        },
+        onError: (Object error) {
+          if (!completer.isCompleted) completer.completeError(error);
+          subscription.cancel();
+        },
+      );
 
-        _googleSignIn.authenticate();
-        return completer.future;
-      }
+      _googleSignIn.authenticate();
+      return completer.future;
     } on FirebaseAuthException catch (e) {
       AppLogger.error('Delete Account: ошибка', error: e);
       rethrow;
     }
   }
-} // ← закрывает FirebaseAuthService
+}
 
-/// Исключение с человекочитаемым сообщением из [FirebaseAuthService].
-///
-/// Используй в AppBloc: `on AuthException catch (e) → emit(AuthFailure(e.message))`.
 class AuthException implements Exception {
   const AuthException(this.message);
   final String message;

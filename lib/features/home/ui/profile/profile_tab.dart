@@ -52,8 +52,6 @@ class ProfileTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               const SizedBox(height: 32),
-
-              // ← StreamBuilder следит за userChanges — обновляется мгновенно
               StreamBuilder<UserModel>(
                 stream: AuthRepository.instance.userChanges,
                 initialData: AuthRepository.instance.currentUser,
@@ -62,12 +60,10 @@ class ProfileTab extends StatelessWidget {
                   return _ProfileHeader(user: user);
                 },
               ),
-
               const SizedBox(height: 32),
               _SectionLabel(label: l10n.profileLanguage),
               const _LanguageTile(),
               const SizedBox(height: 16),
-
               _SectionLabel(label: l10n.profileAccount),
               _MenuTile(
                 icon: Icons.edit_outlined,
@@ -123,6 +119,51 @@ class ProfileTab extends StatelessWidget {
 
   Future<void> _confirmDelete(
       BuildContext context, AppLocalizations l10n) async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+
+    // Проверяем: email/password пользователь?
+    // У них нужна повторная авторизация через пароль перед удалением.
+    final isEmailUser = firebaseUser?.providerData.any(
+          (p) => p.providerId == EmailAuthProvider.PROVIDER_ID,
+        ) ??
+        false;
+
+    if (isEmailUser) {
+      // Показываем диалог с полем пароля вместо обычного confirm-диалога.
+      // Делаем reauthenticate здесь — тогда когда bloc вызовет user.delete(),
+      // сессия будет свежей и requires-recent-login не возникнет.
+      final password = await _showPasswordConfirmDialog(context, l10n);
+      if (password == null || !context.mounted) return;
+
+      try {
+        final credential = EmailAuthProvider.credential(
+          email: firebaseUser!.email!,
+          password: password,
+        );
+        await firebaseUser.reauthenticateWithCredential(credential);
+      } on FirebaseAuthException catch (e) {
+        if (!context.mounted) return;
+        final message = (e.code == 'wrong-password' ||
+                e.code == 'invalid-credential')
+            ? l10n.editWrongPassword
+            : '${l10n.commonError}: ${e.code}';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+        return;
+      }
+
+      // Авторизация прошла — отправляем запрос на удаление
+      if (context.mounted) {
+        context.read<AppBloc>().add(const AuthDeleteRequested());
+      }
+      return;
+    }
+
+    // Google или другой провайдер — обычный confirm-диалог
+    // (Google re-auth обрабатывается внутри firebase_auth_service.dart)
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
@@ -146,13 +187,72 @@ class ProfileTab extends StatelessWidget {
       context.read<AppBloc>().add(const AuthDeleteRequested());
     }
   }
+
+  /// Диалог с полем ввода пароля для подтверждения удаления аккаунта.
+  /// Возвращает пароль если пользователь подтвердил, null если отменил.
+  Future<String?> _showPasswordConfirmDialog(
+      BuildContext context, AppLocalizations l10n) async {
+    final passCtrl = TextEditingController();
+    bool obscure = true;
+
+    return showDialog<String>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: Text(l10n.authDeleteTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.authDeleteWarning),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passCtrl,
+                obscureText: obscure,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l10n.editCurrentPassword,
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () => setState(() => obscure = !obscure),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: Text(l10n.authCancel),
+            ),
+            TextButton(
+              onPressed: () {
+                final password = passCtrl.text;
+                if (password.isNotEmpty) Navigator.of(ctx).pop(password);
+              },
+              child: Text(
+                l10n.authDeleteConfirmBtn,
+                style: const TextStyle(color: AppColors.error),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Хедер профиля ───────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user});
-  final UserModel user; // ← UserModel вместо User?
+  final UserModel user;
 
   @override
   Widget build(BuildContext context) {
