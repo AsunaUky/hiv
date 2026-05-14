@@ -137,6 +137,14 @@ class _ArticleIcon extends StatelessWidget {
   const _ArticleIcon({required this.codePoint});
   final int codePoint;
 
+  IconData _getIcon(int codePoint) {
+    const map = {
+      0xe5c4: Icons.arrow_back,
+      0xe88a: Icons.home,
+    };
+    return map[codePoint] ?? Icons.help_outline;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -147,7 +155,7 @@ class _ArticleIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(
-        IconData(codePoint, fontFamily: 'MaterialIcons'),
+        _getIcon(codePoint),
         color: AppColors.primary,
         size: 26,
       ),

@@ -1,10 +1,7 @@
-// lib/features/home/ui/home_shell.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hiv/core/locale/locale_cubit.dart';
 
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
@@ -56,12 +53,11 @@ class HomeShell extends StatelessWidget {
         ),
         BlocProvider<TestCubit>(
           create: (ctx) {
-            final locale = ctx.read<LocaleCubit>().state.languageCode;
             return TestCubit(
               TestRepositoryImpl(
                 TestRemoteDataSource(FirebaseFirestore.instance),
               ),
-            )..load(locale);
+            ); // ..load(locale);
           },
         ),
       ],

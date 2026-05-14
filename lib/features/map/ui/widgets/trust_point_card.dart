@@ -1,12 +1,8 @@
-// lib/features/map/ui/widgets/trust_point_card.dart
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/trust_points_entity.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-
-// Расширение убирает необходимость писать ! при каждом обращении к l10n.
 extension _ContextL10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
 }
@@ -185,7 +181,6 @@ class TrustPointCard extends StatelessWidget {
 }
 
 // ── Вспомогательные виджеты ───────────────────────────────────────────────────
-
 class _IconText extends StatelessWidget {
   const _IconText({
     required this.icon,

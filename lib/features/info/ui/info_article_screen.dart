@@ -14,6 +14,14 @@ class InfoArticleScreen extends StatelessWidget {
 
   final ArticleEntity article;
 
+  IconData _iconData(int codePoint) {
+    const map = {
+      0xe5c4: Icons.arrow_back,
+      0xe88a: Icons.home,
+    };
+    return map[codePoint] ?? Icons.help_outline;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +61,7 @@ class InfoArticleScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Icon(
-                    IconData(article.iconCode, fontFamily: 'MaterialIcons'),
+                    _iconData(article.iconCode),
                     color: AppColors.primary,
                     size: 36,
                   ),
@@ -61,7 +69,9 @@ class InfoArticleScreen extends StatelessWidget {
               ),
 
               // Блоки контента
-              ...article.blocks.map((block) => _ArticleBlockWidget(block: block)),
+              ...article.blocks.map(
+                (block) => _ArticleBlockWidget(block: block),
+              ),
             ],
           ),
         ),

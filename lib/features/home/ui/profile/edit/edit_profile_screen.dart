@@ -36,12 +36,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _obscureConf = true;
 
   File?   _pickedImage;
-  String? _firestorePhotoUrl; // base64 из Firestore
+  String? _firestorePhotoUrl;
   bool    _saving  = false;
   bool    _picking = false;
 
-  User? get _user    => FirebaseAuth.instance.currentUser;
-  bool get _hasEmail => _user?.email != null && !(_user?.isAnonymous ?? true);
+  User? get _user => FirebaseAuth.instance.currentUser;
+
+  // Форма смены пароля только для email/password пользователей.
+  // Google-пользователи тоже имеют email, но нет password-провайдера.
+  bool get _hasEmailPassword =>
+      _user?.providerData.any(
+        (p) => p.providerId == EmailAuthProvider.PROVIDER_ID,
+      ) ??
+      false;
 
   @override
   void initState() {
@@ -70,9 +77,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final status = await PermissionService.requestGalleryPermission();
       if (!status.isGranted && !status.isLimited) {
-        if (status.isPermanentlyDenied && mounted) {
+        if (mounted) {
+          // fix: только снекбар, без авто-редиректа в настройки.
+          // Поведение теперь аналогично геолокации на карте.
           _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
-          await PermissionService.openSettings();
         }
         return;
       }
@@ -136,18 +144,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final l10n = context.l10n;
     return switch (code) {
       'wrong-password' || 'invalid-credential' => l10n.editWrongPassword,
-      'weak-password'       => l10n.editWeakPassword,
+      'weak-password'         => l10n.editWeakPassword,
       'requires-recent-login' => l10n.editRecentLogin,
       _ => '${l10n.commonError}: $code',
     };
   }
 
-  // ── Аватар ────────────────────────────────────────────────────
-
   ImageProvider? get _avatarImage {
     if (_pickedImage != null) return FileImage(_pickedImage!);
     if (_firestorePhotoUrl != null) {
-      // base64-строка из Firestore
       if (_firestorePhotoUrl!.startsWith('data:')) {
         final base64Str = _firestorePhotoUrl!.split(',').last;
         return MemoryImage(base64Decode(base64Str));
@@ -161,8 +166,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final name = (_user?.displayName ?? '').trim();
     return name.isEmpty ? '?' : name[0].toUpperCase();
   }
-
-  // ── Build ─────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +204,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           prefixIcon: const Icon(Icons.person_outline_rounded),
                         ),
                       ),
-                      if (_hasEmail) ...[
+                      if (_hasEmailPassword) ...[
                         const SizedBox(height: 24),
                         _SectionLabel(l10n.editChangePasswordLabel),
                         const SizedBox(height: 8),
@@ -209,10 +212,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _currPassCtrl,
                           hint: l10n.editCurrentPassword,
                           obscure: _obscureCurr,
-                          onToggle: () => setState(() => _obscureCurr = !_obscureCurr),
+                          onToggle: () =>
+                              setState(() => _obscureCurr = !_obscureCurr),
                           validator: (v) {
                             if (_newPassCtrl.text.isEmpty) return null;
-                            if (v == null || v.isEmpty) return l10n.editCurrentPassword;
+                            if (v == null || v.isEmpty) {
+                              return l10n.editCurrentPassword;
+                            }
                             return null;
                           },
                         ),
@@ -221,18 +227,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _newPassCtrl,
                           hint: l10n.editNewPassword,
                           obscure: _obscureNew,
-                          onToggle: () => setState(() => _obscureNew = !_obscureNew),
-                          validator: (v) => v == null || v.isEmpty ? null : AppValidators.password(v, context.l10n),
+                          onToggle: () =>
+                              setState(() => _obscureNew = !_obscureNew),
+                          validator: (v) => v == null || v.isEmpty
+                              ? null
+                              : AppValidators.password(v, context.l10n),
                         ),
                         const SizedBox(height: 10),
                         _PassField(
                           controller: _confPassCtrl,
                           hint: l10n.editConfirmPassword,
                           obscure: _obscureConf,
-                          onToggle: () => setState(() => _obscureConf = !_obscureConf),
+                          onToggle: () =>
+                              setState(() => _obscureConf = !_obscureConf),
                           validator: (v) => _newPassCtrl.text.isEmpty
                               ? null
-                              : AppValidators.confirmPassword(v, _newPassCtrl.text, context.l10n),
+                              : AppValidators.confirmPassword(
+                                  v, _newPassCtrl.text, context.l10n),
                         ),
                       ],
                       const SizedBox(height: 16),
@@ -246,8 +257,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onPressed: _saving ? null : _save,
                   child: _saving
                       ? const SizedBox(
-                          width: 22, height: 22,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5),
                         )
                       : Text(l10n.commonSave),
                 ),
@@ -259,8 +272,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
-
-// ── Приватные виджеты ─────────────────────────────────────────────────────────
 
 class _AvatarPicker extends StatelessWidget {
   const _AvatarPicker({
@@ -275,34 +286,41 @@ class _AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Stack(
-      children: [
-        CircleAvatar(
-          radius: 56,
-          backgroundColor: AppColors.primary,
-          backgroundImage: image,
-          child: image == null
-              ? Text(initial, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: Colors.white))
-              : null,
-        ),
-        Positioned(
-          bottom: 0, right: 0,
-          child: GestureDetector(
-            onTap: onTap,
-            child: Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
+        child: Stack(
+          children: [
+            CircleAvatar(
+              radius: 56,
+              backgroundColor: AppColors.primary,
+              backgroundImage: image,
+              child: image == null
+                  ? Text(initial,
+                      style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white))
+                  : null,
             ),
-          ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: onTap,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.photo_library_outlined,
+                      color: Colors.white, size: 18),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -311,9 +329,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-    text.toUpperCase(),
-    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textHint, letterSpacing: 1.2),
-  );
+        text.toUpperCase(),
+        style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textHint,
+            letterSpacing: 1.2),
+      );
 }
 
 class _PassField extends StatelessWidget {
@@ -325,24 +347,26 @@ class _PassField extends StatelessWidget {
     this.validator,
   });
 
-  final TextEditingController        controller;
-  final String                       hint;
-  final bool                         obscure;
-  final VoidCallback                 onToggle;
-  final String? Function(String?)?   validator;
+  final TextEditingController      controller;
+  final String                     hint;
+  final bool                       obscure;
+  final VoidCallback               onToggle;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) => TextFormField(
-    controller: controller,
-    obscureText: obscure,
-    validator: validator,
-    decoration: InputDecoration(
-      hintText: hint,
-      prefixIcon: const Icon(Icons.lock_outline_rounded),
-      suffixIcon: IconButton(
-        icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-        onPressed: onToggle,
-      ),
-    ),
-  );
+        controller: controller,
+        obscureText: obscure,
+        validator: validator,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: const Icon(Icons.lock_outline_rounded),
+          suffixIcon: IconButton(
+            icon: Icon(obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined),
+            onPressed: onToggle,
+          ),
+        ),
+      );
 }

@@ -22,10 +22,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl  = TextEditingController();
   bool _obscure    = true;
 
-  // FIX: если текущий пользователь — гость (анонимный),
-  // кнопка «Войти как гость» бессмысленна — скрываем её.
   bool get _isGuest =>
       FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Сбрасываем зависший AuthLoading если экран открылся в таком стейте.
+    // Это случается когда пользователь нажал "Войти", запрос завис,
+    // затем перешёл на другой экран и вернулся обратно.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && context.read<AppBloc>().state is AuthLoading) {
+        context.read<AppBloc>().add(const AuthSignOutRequested());
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -55,140 +66,142 @@ class _LoginScreenState extends State<LoginScreen> {
           ));
         }
       },
-      child: Scaffold(
-        appBar: context.canPop()
-            ? AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.textPrimary, size: 20),
-                  onPressed: () => context.pop(),
-                ),
-              )
-            : null,
-        body: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Верхний блок: поля по центру ─────────────────
-                // LayoutBuilder даёт реальную высоту Expanded,
-                // ConstrainedBox растягивает Column до этой высоты,
-                // mainAxisAlignment: center — поля по середине.
-                // SingleChildScrollView включается когда клавиатура
-                // поднимается и места становится меньше.
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => SingleChildScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 28),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const _AuthHeader(
-                              title: 'Вход',
-                              subtitle: 'Добро пожаловать',
-                            ),
-                            const SizedBox(height: 32),
-                            AppTextField(
-                              controller: _emailCtrl,
-                              hint: 'Email',
-                              prefixIcon: Icons.mail_outline_rounded,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) => AppValidators.email(value, AppLocalizations.of(context)),
-                            ),
-                            const SizedBox(height: 14),
-                            AppTextField(
-                              controller: _passCtrl,
-                              hint: 'Пароль',
-                              prefixIcon: Icons.lock_outline_rounded,
-                              obscureText: _obscure,
-                              suffixIcon: _EyeToggle(
-                                obscure: _obscure,
-                                onTap: () =>
-                                    setState(() => _obscure = !_obscure),
+      child: PopScope(
+        // Сбрасываем AuthLoading при нажатии назад во время загрузки,
+        // иначе на предыдущем экране кнопки останутся задизейблены.
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop && context.read<AppBloc>().state is AuthLoading) {
+            context.read<AppBloc>().add(const AuthSignOutRequested());
+          }
+        },
+        child: Scaffold(
+          appBar: context.canPop()
+              ? AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.textPrimary, size: 20),
+                    onPressed: () => context.pop(),
+                  ),
+                )
+              : null,
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 28),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const _AuthHeader(
+                                title: 'Вход',
+                                subtitle: 'Добро пожаловать',
                               ),
-                              validator: (value) => AppValidators.loginPassword(value, AppLocalizations.of(context)),
-                            ),
-                          ],
+                              const SizedBox(height: 32),
+                              AppTextField(
+                                controller: _emailCtrl,
+                                hint: 'Email',
+                                prefixIcon: Icons.mail_outline_rounded,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) => AppValidators.email(
+                                    value, AppLocalizations.of(context)),
+                              ),
+                              const SizedBox(height: 14),
+                              AppTextField(
+                                controller: _passCtrl,
+                                hint: 'Пароль',
+                                prefixIcon: Icons.lock_outline_rounded,
+                                obscureText: _obscure,
+                                suffixIcon: _EyeToggle(
+                                  obscure: _obscure,
+                                  onTap: () =>
+                                      setState(() => _obscure = !_obscure),
+                                ),
+                                validator: (value) =>
+                                    AppValidators.loginPassword(
+                                        value, AppLocalizations.of(context)),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                // ── Нижний блок: кнопки всегда внизу ─────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      BlocBuilder<AppBloc, AppState>(
-                        builder: (_, state) => ElevatedButton(
-                          onPressed:
-                              state is AuthLoading ? null : _submit,
-                          child: state is AuthLoading
-                              ? const _Spinner()
-                              : const Text('Войти'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        BlocBuilder<AppBloc, AppState>(
+                          builder: (_, state) => ElevatedButton(
+                            onPressed: state is AuthLoading ? null : _submit,
+                            child: state is AuthLoading
+                                ? const _Spinner()
+                                : const Text('Войти'),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      BlocBuilder<AppBloc, AppState>(
-                        builder: (context, state) => GoogleSignInButton(
-                          loading: state is AuthLoading,
-                          onTap: () => context
-                              .read<AppBloc>()
-                              .add(const AuthGoogleRequested()),
-                        ),
-                      ),
-                      // Кнопка «Войти как гость» скрыта, если пользователь
-                      // уже является гостем — ему она не нужна.
-                      if (!_isGuest) ...[
                         const SizedBox(height: 10),
                         BlocBuilder<AppBloc, AppState>(
-                          builder: (context, state) =>
-                              OutlinedButton.icon(
-                            onPressed: state is AuthLoading
-                                ? null
-                                : () => context
-                                    .read<AppBloc>()
-                                    .add(const AuthGuestRequested()),
-                            icon: const Icon(
-                                Icons.person_outline_rounded,
-                                size: 18),
-                            label: const Text('Войти как гость'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textSecondary,
-                              side: const BorderSide(
-                                  color: AppColors.divider),
-                              minimumSize:
-                                  const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          builder: (context, state) => GoogleSignInButton(
+                            loading: state is AuthLoading,
+                            onTap: () => context
+                                .read<AppBloc>()
+                                .add(const AuthGoogleRequested()),
+                          ),
+                        ),
+                        if (!_isGuest) ...[
+                          const SizedBox(height: 10),
+                          BlocBuilder<AppBloc, AppState>(
+                            builder: (context, state) =>
+                                OutlinedButton.icon(
+                              onPressed: state is AuthLoading
+                                  ? null
+                                  : () => context
+                                      .read<AppBloc>()
+                                      .add(const AuthGuestRequested()),
+                              icon: const Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 18),
+                              label: const Text('Войти как гость'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.textSecondary,
+                                side: const BorderSide(
+                                    color: AppColors.divider),
+                                minimumSize:
+                                    const Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ),
+                        ],
+                        const SizedBox(height: 16),
+                        AuthBottomLink(
+                          text: 'Нет аккаунта?',
+                          linkText: 'Зарегистрироваться',
+                          onTap: () =>
+                              context.pushReplacement(RouteNames.register),
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      AuthBottomLink(
-                        text: 'Нет аккаунта?',
-                        linkText: 'Зарегистрироваться',
-                        onTap: () =>
-                            context.pushReplacement(RouteNames.register),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

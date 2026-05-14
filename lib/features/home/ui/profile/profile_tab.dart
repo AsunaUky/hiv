@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -91,8 +93,7 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmSignOut(
-      BuildContext context, AppLocalizations l10n) async {
+  Future<void> _confirmSignOut(BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
@@ -117,53 +118,7 @@ class ProfileTab extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmDelete(
-      BuildContext context, AppLocalizations l10n) async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-
-    // Проверяем: email/password пользователь?
-    // У них нужна повторная авторизация через пароль перед удалением.
-    final isEmailUser = firebaseUser?.providerData.any(
-          (p) => p.providerId == EmailAuthProvider.PROVIDER_ID,
-        ) ??
-        false;
-
-    if (isEmailUser) {
-      // Показываем диалог с полем пароля вместо обычного confirm-диалога.
-      // Делаем reauthenticate здесь — тогда когда bloc вызовет user.delete(),
-      // сессия будет свежей и requires-recent-login не возникнет.
-      final password = await _showPasswordConfirmDialog(context, l10n);
-      if (password == null || !context.mounted) return;
-
-      try {
-        final credential = EmailAuthProvider.credential(
-          email: firebaseUser!.email!,
-          password: password,
-        );
-        await firebaseUser.reauthenticateWithCredential(credential);
-      } on FirebaseAuthException catch (e) {
-        if (!context.mounted) return;
-        final message = (e.code == 'wrong-password' ||
-                e.code == 'invalid-credential')
-            ? l10n.editWrongPassword
-            : '${l10n.commonError}: ${e.code}';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(message),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
-        return;
-      }
-
-      // Авторизация прошла — отправляем запрос на удаление
-      if (context.mounted) {
-        context.read<AppBloc>().add(const AuthDeleteRequested());
-      }
-      return;
-    }
-
-    // Google или другой провайдер — обычный confirm-диалог
-    // (Google re-auth обрабатывается внутри firebase_auth_service.dart)
+  Future<void> _confirmDelete(BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       useRootNavigator: true,
@@ -187,68 +142,16 @@ class ProfileTab extends StatelessWidget {
       context.read<AppBloc>().add(const AuthDeleteRequested());
     }
   }
-
-  /// Диалог с полем ввода пароля для подтверждения удаления аккаунта.
-  /// Возвращает пароль если пользователь подтвердил, null если отменил.
-  Future<String?> _showPasswordConfirmDialog(
-      BuildContext context, AppLocalizations l10n) async {
-    final passCtrl = TextEditingController();
-    bool obscure = true;
-
-    return showDialog<String>(
-      context: context,
-      useRootNavigator: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: Text(l10n.authDeleteTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.authDeleteWarning),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passCtrl,
-                obscureText: obscure,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: l10n.editCurrentPassword,
-                  prefixIcon: const Icon(Icons.lock_outline_rounded),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      obscure
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                    ),
-                    onPressed: () => setState(() => obscure = !obscure),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(null),
-              child: Text(l10n.authCancel),
-            ),
-            TextButton(
-              onPressed: () {
-                final password = passCtrl.text;
-                if (password.isNotEmpty) Navigator.of(ctx).pop(password);
-              },
-              child: Text(
-                l10n.authDeleteConfirmBtn,
-                style: const TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-// ─── Хедер профиля ───────────────────────────────────────────────
+// ── Хелпер: определяет тип URL и возвращает нужный ImageProvider ─────────────
+ImageProvider _resolveImage(String url) {
+  if (url.startsWith('data:')) {
+    final base64Str = url.split(',').last;
+    return MemoryImage(base64Decode(base64Str));
+  }
+  return NetworkImage(url);
+}
 
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user});
@@ -266,15 +169,15 @@ class _ProfileHeader extends StatelessWidget {
         CircleAvatar(
           radius: 48,
           backgroundColor: AppColors.primary,
-          backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+          // _resolveImage теперь топ-уровневая функция — доступна отовсюду в файле
+          backgroundImage: photoUrl != null ? _resolveImage(photoUrl) : null,
           child: photoUrl == null
               ? Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
                   style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white),
                 )
               : null,
         ),
@@ -282,23 +185,19 @@ class _ProfileHeader extends StatelessWidget {
         Text(
           name.isNotEmpty ? name : l10n.profileGuest,
           style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary),
         ),
         if (email.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(email,
-              style: const TextStyle(
-                  fontSize: 14, color: AppColors.textSecondary)),
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
         ],
       ],
     );
   }
 }
-
-// ─── Вспомогательные виджеты ─────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -310,11 +209,10 @@ class _SectionLabel extends StatelessWidget {
         child: Text(
           label.toUpperCase(),
           style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textHint,
-            letterSpacing: 1.2,
-          ),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textHint,
+              letterSpacing: 1.2),
         ),
       );
 }

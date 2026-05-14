@@ -1,19 +1,28 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hiv/core/locale/locale_cubit.dart';
+import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/domain/entities/test_entity.dart';
+import 'package:hiv/data/repositories/test_repository_impl.dart';
+import 'package:hiv/data/datasources/test_remote_datasource.dart';
 import 'package:hiv/features/test/bloc/test_cubit.dart';
-import 'package:hiv/l10n/generated/app_localizations.dart';
-
-extension _ContextL10n on BuildContext {
-  AppLocalizations get l10n => AppLocalizations.of(this);
-}
 
 class TestScreen extends StatelessWidget {
   const TestScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => const _TestView();
+  Widget build(BuildContext context) {
+    final locale = context.read<LocaleCubit>().state.languageCode;
+    return BlocProvider(
+      create: (_) => TestCubit(
+        TestRepositoryImpl(TestRemoteDataSource(FirebaseFirestore.instance)),
+      )..load(locale),
+      child: const _TestView(),
+    );
+  }
 }
 
 class _TestView extends StatelessWidget {
@@ -24,13 +33,7 @@ class _TestView extends StatelessWidget {
     return BlocConsumer<TestCubit, TestState>(
       listener: (context, state) {
         if (state is TestCompleted) {
-          // fix P2-01: restart cubit as soon as the result screen is popped,
-          // so the builder always sees TestReady on return — no spinner.
-          context.push('/test-result', extra: state).then((_) {
-            if (context.mounted) {
-              context.read<TestCubit>().restart();
-            }
-          });
+          context.push('/test-result', extra: state);
         }
       },
       builder: (context, state) {
@@ -65,7 +68,7 @@ class _TestIntroPage extends StatefulWidget {
 }
 
 class _TestIntroPageState extends State<_TestIntroPage> {
-  List<Map<String, dynamic>>? _history;
+  List<Map<String, dynamic>>? _history; // null = ещё грузится
   bool _historyExpanded = false;
 
   @override
@@ -81,10 +84,13 @@ class _TestIntroPageState extends State<_TestIntroPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l = context.locale;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -126,11 +132,7 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.lock_outline,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
+                    const Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -147,8 +149,7 @@ class _TestIntroPageState extends State<_TestIntroPage> {
               _HistorySection(
                 history: _history,
                 expanded: _historyExpanded,
-                onToggle: () =>
-                    setState(() => _historyExpanded = !_historyExpanded),
+                onToggle: () => setState(() => _historyExpanded = !_historyExpanded),
               ),
 
               const SizedBox(height: 32),
@@ -168,6 +169,10 @@ class _TestIntroPageState extends State<_TestIntroPage> {
   }
 }
 
+/// Блок истории.
+/// - `history == null` → placeholder (скелетон заголовка) — место занято, кнопка не прыгает
+/// - `history == []`   → скрыто (пустой SizedBox)
+/// - `history.isNotEmpty` → показываем заголовок + разворачивающийся список
 class _HistorySection extends StatelessWidget {
   const _HistorySection({
     required this.history,
@@ -181,14 +186,24 @@ class _HistorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l = context.locale;
 
+    // Ещё грузится — показываем placeholder той же высоты что и заголовок
     if (history == null) {
-      return const SizedBox(height: 52);
+      return Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        // пустой контейнер — место зарезервировано, кнопка не прыгает
+      );
     }
 
+    // История пуста — ничего не показываем
     if (history!.isEmpty) return const SizedBox.shrink();
 
+    // Есть записи — показываем заголовок и список
     return Column(
       children: [
         GestureDetector(
@@ -201,11 +216,7 @@ class _HistorySection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.history_rounded,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
+                const Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -232,11 +243,7 @@ class _HistorySection extends StatelessWidget {
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           child: expanded
-              ? Column(
-                  children: history!
-                      .map((e) => _HistoryItem(entry: e))
-                      .toList(),
-                )
+              ? Column(children: history!.map((e) => _HistoryItem(entry: e)).toList())
               : const SizedBox.shrink(),
         ),
       ],
@@ -252,22 +259,22 @@ class _HistoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateTime.parse(entry['date'] as String);
     final riskLevel = entry['riskLevel'] as String;
-    final l = context.l10n;
+    final l = context.locale;
 
     final label = switch (riskLevel) {
-      'high' => l.testRiskHigh,
+      'high'     => l.testRiskHigh,
       'moderate' => l.testRiskModerate,
-      _ => l.testRiskMinimal,
+      _          => l.testRiskMinimal,
     };
     final color = switch (riskLevel) {
-      'high' => Colors.red,
+      'high'     => Colors.red,
       'moderate' => Colors.orange,
-      _ => Colors.green,
+      _          => Colors.green,
     };
     final icon = switch (riskLevel) {
-      'high' => Icons.warning_rounded,
+      'high'     => Icons.warning_rounded,
       'moderate' => Icons.info_rounded,
-      _ => Icons.check_circle_rounded,
+      _          => Icons.check_circle_rounded,
     };
 
     return Container(
@@ -288,19 +295,12 @@ class _HistoryItem extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 14),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -328,8 +328,6 @@ class _TestQuestionsPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
-            // fix P2-04: removed dead context.pop() — this screen lives inside
-            // the ShellRoute tab, there is no route to pop. Only update cubit state.
             if (state.currentQuestionIndex > 0) {
               context.read<TestCubit>().previousQuestion();
             } else {
@@ -391,16 +389,15 @@ class _TestQuestionsPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            context.l10n.testAllQuestionsAnswered,
+                            context.locale.testAllQuestionsAnswered,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 32),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () =>
-                                  context.read<TestCubit>().finish(),
-                              child: Text(context.l10n.testFinishButton),
+                              onPressed: () => context.read<TestCubit>().finish(),
+                              child: Text(context.locale.testFinishButton),
                             ),
                           ),
                         ],
@@ -518,9 +515,7 @@ class _OptionTile extends StatelessWidget {
                 option.text,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                  color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
                 ),
               ),
             ),
