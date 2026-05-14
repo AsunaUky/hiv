@@ -9,6 +9,7 @@ import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/data/models/user_model.dart';
 import 'package:hiv/domain/repositories/auth_repository.dart';
+import 'package:hiv/domain/repositories/user_repository.dart';
 import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/features/home/ui/profile/guest_profile_screen.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
@@ -54,14 +55,32 @@ class ProfileTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               const SizedBox(height: 32),
+
+              // fix: двойной StreamBuilder — Auth для имени/email,
+              // Firestore для фото (хранится как base64 в Firestore,
+              // не в Firebase Auth photoURL).
               StreamBuilder<UserModel>(
                 stream: AuthRepository.instance.userChanges,
                 initialData: AuthRepository.instance.currentUser,
-                builder: (context, snapshot) {
-                  final user = snapshot.data ?? UserModel.empty;
-                  return _ProfileHeader(user: user);
+                builder: (context, authSnap) {
+                  final user = authSnap.data ?? UserModel.empty;
+                  return StreamBuilder<Map<String, dynamic>?>(
+                    stream: UserRepository.instance.profileStream(),
+                    builder: (context, fsSnap) {
+                      // Предпочитаем Firestore-фото (base64) — оно обновляется
+                      // через UserRepository.uploadPhoto. Firebase Auth photoURL
+                      // используем только как fallback (Google-аватар при входе).
+                      final fsPhoto = fsSnap.data?['photoUrl'] as String?;
+                      final effectivePhoto =
+                          (fsPhoto != null && fsPhoto.isNotEmpty)
+                              ? fsPhoto
+                              : user.photoUrl;
+                      return _ProfileHeader(user: user, photoUrl: effectivePhoto);
+                    },
+                  );
                 },
               ),
+
               const SizedBox(height: 32),
               _SectionLabel(label: l10n.profileLanguage),
               const _LanguageTile(),
@@ -154,13 +173,17 @@ ImageProvider _resolveImage(String url) {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.user});
+  const _ProfileHeader({required this.user, required this.photoUrl});
   final UserModel user;
+
+  /// Эффективный URL фото — может быть base64 из Firestore
+  /// или photoURL из Firebase Auth (Google-аватар).
+  final String photoUrl;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final photoUrl = user.photoUrl.isEmpty ? null : user.photoUrl;
+    final effectivePhoto = photoUrl.isEmpty ? null : photoUrl;
     final name = user.displayName;
     final email = user.email;
 
@@ -169,9 +192,8 @@ class _ProfileHeader extends StatelessWidget {
         CircleAvatar(
           radius: 48,
           backgroundColor: AppColors.primary,
-          // _resolveImage теперь топ-уровневая функция — доступна отовсюду в файле
-          backgroundImage: photoUrl != null ? _resolveImage(photoUrl) : null,
-          child: photoUrl == null
+          backgroundImage: effectivePhoto != null ? _resolveImage(effectivePhoto) : null,
+          child: effectivePhoto == null
               ? Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
                   style: const TextStyle(

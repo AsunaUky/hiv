@@ -43,7 +43,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   User? get _user => FirebaseAuth.instance.currentUser;
 
   // Форма смены пароля только для email/password пользователей.
-  // Google-пользователи тоже имеют email, но нет password-провайдера.
   bool get _hasEmailPassword =>
       _user?.providerData.any(
         (p) => p.providerId == EmailAuthProvider.PROVIDER_ID,
@@ -75,22 +74,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_picking) return;
     _picking = true;
     try {
-      final status = await PermissionService.requestGalleryPermission();
+      // fix: на Android 13+ Permission.photos.request() сам открывает
+      // системный медиапикер (для выбора ограниченного доступа).
+      // Если потом вызвать ImagePicker — получаем два пикера подряд.
+      // Решение: сначала проверяем статус без запроса.
+      // Запрашиваем только если разрешение ещё не выдано.
+      PermissionStatus status = await Permission.photos.status;
+
       if (!status.isGranted && !status.isLimited) {
-        if (mounted) {
-          // fix: только снекбар, без авто-редиректа в настройки.
-          // Поведение теперь аналогично геолокации на карте.
+        status = await PermissionService.requestGalleryPermission();
+        if (!mounted) return;
+        if (!status.isGranted && !status.isLimited) {
           _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
+          return;
         }
-        return;
       }
+
       final picked = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         maxWidth: 512,
         maxHeight: 512,
         imageQuality: 85,
       );
-      if (picked == null) return;
+      if (picked == null || !mounted) return;
       setState(() => _pickedImage = File(picked.path));
     } finally {
       _picking = false;

@@ -164,86 +164,95 @@ class FirebaseAuthService {
 
   /// Удаление аккаунта.
   ///
-  /// fix P2-01: определяем провайдера через providerData, а не через
-  /// наличие SERVER_CLIENT_ID в .env. Google flow запускается только
-  /// для Google-пользователей. Email/password и анонимные аккаунты
-  /// удаляются напрямую (Firebase бросит requires-recent-login если нужно).
+  /// Сначала пробуем удалить напрямую — это работает при свежей сессии
+  /// (пользователь только что вошёл). Если Firebase вернул
+  /// [requires-recent-login] — запускаем re-auth автоматически:
+  /// Google-пользователи проходят Google Sign-In, email-пользователи
+  /// получают понятное сообщение.
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    // Проверяем: вошёл ли пользователь через Google
+    // 1. Пробуем удалить напрямую (работает при свежем входе)
+    try {
+      await user.delete();
+      AppLogger.info('Delete Account: аккаунт удалён напрямую');
+      return;
+    } on FirebaseAuthException catch (e) {
+      if (e.code != 'requires-recent-login') {
+        AppLogger.error('Delete Account: ошибка', error: e);
+        rethrow;
+      }
+      // Сессия устарела — нужна повторная аутентификация
+      AppLogger.warning('Delete Account: requires-recent-login, запускаем re-auth');
+    }
+
+    // 2. Определяем провайдера
     final isGoogleUser = user.providerData.any(
       (p) => p.providerId == GoogleAuthProvider.PROVIDER_ID,
     );
 
     if (!isGoogleUser) {
-      // Email/password или анонимный аккаунт — удаляем напрямую.
-      // Firebase сам бросит FirebaseAuthException(requires-recent-login)
-      // если сессия устарела — это уже обрабатывается в AppBloc.
-      try {
-        await user.delete();
-        AppLogger.info('Delete Account: аккаунт удалён (email/anonymous)');
-      } on FirebaseAuthException catch (e) {
-        AppLogger.error('Delete Account: ошибка', error: e);
-        rethrow;
-      }
-      return;
-    }
-
-    // Google-пользователь: повторная аутентификация через Google
-    try {
-      final serverClientId = dotenv.env['SERVER_CLIENT_ID'];
-      if (serverClientId == null) throw Exception('Server client is empty!');
-
-      await initialize(serverClientId: serverClientId);
-      try {
-        await _googleSignIn.disconnect();
-      } catch (_) {}
-
-      final completer = Completer<void>();
-      late final StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
-
-      subscription = _googleSignIn.authenticationEvents.listen(
-        (event) async {
-          try {
-            switch (event) {
-              case GoogleSignInAuthenticationEventSignIn():
-                final idToken = event.user.authentication.idToken;
-                final credential =
-                    GoogleAuthProvider.credential(idToken: idToken);
-                await user.reauthenticateWithCredential(credential);
-                await _googleSignIn.signOut().catchError((_) {});
-                await user.delete();
-                AppLogger.info('Delete Account: аккаунт удалён (Google)');
-                if (!completer.isCompleted) completer.complete();
-
-              case GoogleSignInAuthenticationEventSignOut():
-                if (!completer.isCompleted) {
-                  completer.completeError(
-                    AuthException(
-                        'Необходимо войти через Google для подтверждения.'),
-                  );
-                }
-            }
-          } catch (e) {
-            if (!completer.isCompleted) completer.completeError(e);
-          } finally {
-            await subscription.cancel();
-          }
-        },
-        onError: (Object error) {
-          if (!completer.isCompleted) completer.completeError(error);
-          subscription.cancel();
-        },
+      // Email/password: не можем re-auth без пароля — просим выйти и войти снова
+      throw AuthException(
+        'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.',
       );
-
-      _googleSignIn.authenticate();
-      return completer.future;
-    } on FirebaseAuthException catch (e) {
-      AppLogger.error('Delete Account: ошибка', error: e);
-      rethrow;
     }
+
+    // 3. Google re-auth → удаление
+    final serverClientId = dotenv.env['SERVER_CLIENT_ID'];
+    if (serverClientId == null) throw Exception('Server client is empty!');
+
+    await initialize(serverClientId: serverClientId);
+    try {
+      await _googleSignIn.disconnect();
+    } catch (_) {}
+
+    final completer = Completer<void>();
+    late StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
+
+    // Флаг: игнорируем sign-out событие от disconnect() до начала sign-in
+    bool signInStarted = false;
+
+    subscription = _googleSignIn.authenticationEvents.listen(
+      (event) async {
+        switch (event) {
+          case GoogleSignInAuthenticationEventSignIn():
+            signInStarted = true;
+            try {
+              final idToken = event.user.authentication.idToken;
+              final credential =
+                  GoogleAuthProvider.credential(idToken: idToken);
+              await user.reauthenticateWithCredential(credential);
+              await _googleSignIn.signOut().catchError((_) {});
+              await user.delete();
+              AppLogger.info('Delete Account: аккаунт удалён (Google re-auth)');
+              if (!completer.isCompleted) completer.complete();
+            } catch (e) {
+              if (!completer.isCompleted) completer.completeError(e);
+            } finally {
+              subscription.cancel();
+            }
+
+          case GoogleSignInAuthenticationEventSignOut():
+            // Игнорируем sign-out от disconnect() — он приходит до authenticate()
+            if (!signInStarted) return;
+            if (!completer.isCompleted) {
+              completer.completeError(
+                AuthException('Подтверждение через Google отменено.'),
+              );
+              subscription.cancel();
+            }
+        }
+      },
+      onError: (Object error) {
+        if (!completer.isCompleted) completer.completeError(error);
+        subscription.cancel();
+      },
+    );
+
+    _googleSignIn.authenticate();
+    return completer.future;
   }
 }
 
