@@ -188,20 +188,11 @@ class _HistorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.locale;
 
-    // Ещё грузится — показываем placeholder той же высоты что и заголовок
-    if (history == null) {
-      return Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        // пустой контейнер — место зарезервировано, кнопка не прыгает
-      );
-    }
+    // Ещё грузится — прозрачный отступ, кнопка не прыгает
+    if (history == null) return const SizedBox(height: 52);
 
-    // История пуста — ничего не показываем
-    if (history!.isEmpty) return const SizedBox.shrink();
+    // История пуста — резервируем то же место чтобы кнопка не прыгала
+    if (history!.isEmpty) return const SizedBox(height: 52);
 
     // Есть записи — показываем заголовок и список
     return Column(
@@ -525,3 +516,4 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
+
