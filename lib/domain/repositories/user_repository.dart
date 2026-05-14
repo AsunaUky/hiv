@@ -19,8 +19,11 @@ class UserRepository {
 
   User? get _user => _auth.currentUser;
 
-  DocumentReference<Map<String, dynamic>> get _userDoc =>
-      _db.collection(CollectionNames.users).doc(_user!.uid);
+  DocumentReference<Map<String, dynamic>>? get _userDoc {
+    final uid = _user?.uid;
+    if (uid == null) return null;
+    return _db.collection(CollectionNames.users).doc(uid);
+  }
 
   // ── Обновление имени ──────────────────────────────────────────
 
@@ -39,11 +42,14 @@ class UserRepository {
 
   /// Сохраняет фото как base64 в документе пользователя в Firestore.
   Future<String> uploadPhoto(File file) async {
+    final doc = _userDoc;
+    if (doc == null) throw StateError('UserRepository: пользователь не авторизован');
+
     try {
       final bytes = await file.readAsBytes();
       final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
-      await _userDoc.set(
+      await doc.set(
         {'photoUrl': base64Image},
         SetOptions(merge: true),
       );
@@ -63,7 +69,9 @@ class UserRepository {
     required String newPassword,
   }) async {
     try {
-      final user = _user!;
+      final user = _user;
+      if (user == null) throw StateError('UserRepository: пользователь не авторизован');
+
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: currentPassword,
@@ -81,8 +89,8 @@ class UserRepository {
 
   Future<String?> getPhotoUrl() async {
     try {
-      final doc = await _userDoc.get();
-      return doc.data()?['photoUrl'] as String?;
+      final doc = await _userDoc?.get();
+      return doc?.data()?['photoUrl'] as String?;
     } catch (e, s) {
       AppLogger.error('UserRepository: ошибка получения фото', error: e, stackTrace: s);
       return null;
@@ -91,6 +99,8 @@ class UserRepository {
 
   /// Стрим изменений профиля пользователя из Firestore.
   Stream<Map<String, dynamic>?> profileStream() {
-    return _userDoc.snapshots().map((snap) => snap.data());
+    final doc = _userDoc;
+    if (doc == null) return Stream.value(null);
+    return doc.snapshots().map((snap) => snap.data());
   }
 }
