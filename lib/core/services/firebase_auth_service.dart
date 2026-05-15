@@ -123,11 +123,7 @@ class FirebaseAuthService {
               if (!completer.isCompleted) completer.complete(null);
           }
         } catch (error, stackTrace) {
-          AppLogger.error(
-            'Google Sign-In: ошибка',
-            error: error,
-            stackTrace: stackTrace,
-          );
+          AppLogger.error('Google Sign-In: ошибка', error: error, stackTrace: stackTrace);
           if (!completer.isCompleted) completer.completeError(error);
         } finally {
           await subscription.cancel();
@@ -162,18 +158,10 @@ class FirebaseAuthService {
     }
   }
 
-  /// Удаление аккаунта.
-  ///
-  /// Сначала пробуем удалить напрямую — это работает при свежей сессии
-  /// (пользователь только что вошёл). Если Firebase вернул
-  /// [requires-recent-login] — запускаем re-auth автоматически:
-  /// Google-пользователи проходят Google Sign-In, email-пользователи
-  /// получают понятное сообщение.
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    // 1. Пробуем удалить напрямую (работает при свежем входе)
     try {
       await user.delete();
       AppLogger.info('Delete Account: аккаунт удалён напрямую');
@@ -183,23 +171,19 @@ class FirebaseAuthService {
         AppLogger.error('Delete Account: ошибка', error: e);
         rethrow;
       }
-      // Сессия устарела — нужна повторная аутентификация
       AppLogger.warning('Delete Account: requires-recent-login, запускаем re-auth');
     }
 
-    // 2. Определяем провайдера
     final isGoogleUser = user.providerData.any(
       (p) => p.providerId == GoogleAuthProvider.PROVIDER_ID,
     );
 
     if (!isGoogleUser) {
-      // Email/password: не можем re-auth без пароля — просим выйти и войти снова
       throw AuthException(
         'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.',
       );
     }
 
-    // 3. Google re-auth → удаление
     final serverClientId = dotenv.env['SERVER_CLIENT_ID'];
     if (serverClientId == null) throw Exception('Server client is empty!');
 
@@ -211,7 +195,6 @@ class FirebaseAuthService {
     final completer = Completer<void>();
     late StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
 
-    // Флаг: игнорируем sign-out событие от disconnect() до начала sign-in
     bool signInStarted = false;
 
     subscription = _googleSignIn.authenticationEvents.listen(
@@ -221,8 +204,7 @@ class FirebaseAuthService {
             signInStarted = true;
             try {
               final idToken = event.user.authentication.idToken;
-              final credential =
-                  GoogleAuthProvider.credential(idToken: idToken);
+              final credential = GoogleAuthProvider.credential(idToken: idToken);
               await user.reauthenticateWithCredential(credential);
               await _googleSignIn.signOut().catchError((_) {});
               await user.delete();
@@ -235,7 +217,6 @@ class FirebaseAuthService {
             }
 
           case GoogleSignInAuthenticationEventSignOut():
-            // Игнорируем sign-out от disconnect() — он приходит до authenticate()
             if (!signInStarted) return;
             if (!completer.isCompleted) {
               completer.completeError(

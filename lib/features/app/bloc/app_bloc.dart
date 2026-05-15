@@ -36,8 +36,6 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     } on FirebaseAuthException catch (e) {
       emit(AuthFailure(_mapError(e.code)));
     } catch (_) {
-      // Ловим всё остальное (таймауты, сетевые ошибки и т.д.)
-      // чтобы AuthLoading не висел вечно
       emit(const AuthFailure('Ошибка входа. Проверьте подключение и попробуйте снова.'));
     }
   }
@@ -106,29 +104,27 @@ class AppBloc extends Bloc<AppEvent, AppState> {
   }
 
   Future<void> _onDelete(
-  AuthDeleteRequested event,
-  Emitter<AppState> emit,
-) async {
-  emit(const AuthLoading());
-  try {
-    await _authRepository.deleteAccount();
-    emit(const AuthInitial());
-  } on AuthException catch (e) {
-    // Пользователь отменил Google re-auth
-    emit(AuthFailure(e.message));
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'requires-recent-login') {
-      emit(const AuthDeleteFailure(
-        'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.',
-      ));
-    } else {
-      emit(AuthFailure(_mapError(e.code)));
+    AuthDeleteRequested event,
+    Emitter<AppState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      await _authRepository.deleteAccount();
+      emit(const AuthInitial());
+    } on AuthException catch (e) {
+      emit(AuthFailure(e.message));
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        emit(const AuthDeleteFailure(
+          'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.',
+        ));
+      } else {
+        emit(AuthFailure(_mapError(e.code)));
+      }
+    } catch (_) {
+      emit(const AuthFailure('Не удалось удалить аккаунт. Попробуйте снова.'));
     }
-  } catch (_) {
-    emit(const AuthFailure('Не удалось удалить аккаунт. Попробуйте снова.'));
   }
-}
-
 
   String _mapError(String code) => switch (code) {
         'user-not-found'         => 'Пользователь не найден',

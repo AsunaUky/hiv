@@ -1,28 +1,33 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
 import 'package:hiv/core/locale/locale_ext.dart';
+import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/domain/entities/test_entity.dart';
-import 'package:hiv/data/repositories/test_repository_impl.dart';
-import 'package:hiv/data/datasources/test_remote_datasource.dart';
 import 'package:hiv/features/test/bloc/test_cubit.dart';
 
-class TestScreen extends StatelessWidget {
+class TestScreen extends StatefulWidget {
   const TestScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final locale = context.read<LocaleCubit>().state.languageCode;
-    return BlocProvider(
-      create: (_) => TestCubit(
-        TestRepositoryImpl(TestRemoteDataSource(FirebaseFirestore.instance)),
-      )..load(locale),
-      child: const _TestView(),
-    );
+  State<TestScreen> createState() => _TestScreenState();
+}
+
+class _TestScreenState extends State<TestScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final cubit = context.read<TestCubit>();
+    if (cubit.state is TestInitial) {
+      final locale = context.read<LocaleCubit>().state.languageCode;
+      cubit.load(locale);
+    }
   }
+
+  @override
+  Widget build(BuildContext context) => const _TestView();
 }
 
 class _TestView extends StatelessWidget {
@@ -31,9 +36,12 @@ class _TestView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<TestCubit, TestState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is TestCompleted) {
-          context.push('/test-result', extra: state);
+          await context.push(RouteNames.testResult, extra: state);
+          if (context.mounted) {
+            context.read<TestCubit>().restart();
+          }
         }
       },
       builder: (context, state) {
@@ -98,61 +106,115 @@ class _TestIntroPageState extends State<_TestIntroPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: const Icon(
-                    Icons.health_and_safety_outlined,
-                    color: AppColors.primary,
-                    size: 40,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
               Text(
                 l.testTitle,
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 l.testDescription,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.lock_outline_rounded,
+                        color: AppColors.primary, size: 18),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         l.testPrivacyNote,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // ── История прохождений — место зарезервировано всегда ────────
-              const SizedBox(height: 24),
-              _HistorySection(
-                history: _history,
-                expanded: _historyExpanded,
-                onToggle: () => setState(() => _historyExpanded = !_historyExpanded),
-              ),
-
               const SizedBox(height: 32),
+              if (_history == null)
+                const Center(child: CircularProgressIndicator())
+              else if (_history!.isNotEmpty) ...[
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _historyExpanded = !_historyExpanded),
+                  child: Row(
+                    children: [
+                      Text(
+                        l.testHistoryTitle(_history!.length),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        _historyExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        color: AppColors.textHint,
+                      ),
+                    ],
+                  ),
+                ),
+                if (_historyExpanded) ...[
+                  const SizedBox(height: 8),
+                  ..._history!.map((entry) {
+                    final risk = entry['riskLevel'] as String;
+                    final dateStr = entry['date'] as String;
+                    final date = DateTime.tryParse(dateStr);
+                    final color = switch (risk) {
+                      'high' => Colors.red,
+                      'moderate' => Colors.orange,
+                      _ => Colors.green,
+                    };
+                    final label = switch (risk) {
+                      'high' => l.testRiskHigh,
+                      'moderate' => l.testRiskModerate,
+                      _ => l.testRiskMinimal,
+                    };
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(label,
+                              style: TextStyle(color: color, fontSize: 13)),
+                          const Spacer(),
+                          if (date != null)
+                            Text(
+                              '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}',
+                              style: const TextStyle(
+                                  color: AppColors.textHint, fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+                const SizedBox(height: 24),
+              ],
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -160,143 +222,9 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                   child: Text(l.testStartButton),
                 ),
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Блок истории.
-/// - `history == null` → placeholder (скелетон заголовка) — место занято, кнопка не прыгает
-/// - `history == []`   → скрыто (пустой SizedBox)
-/// - `history.isNotEmpty` → показываем заголовок + разворачивающийся список
-class _HistorySection extends StatelessWidget {
-  const _HistorySection({
-    required this.history,
-    required this.expanded,
-    required this.onToggle,
-  });
-
-  final List<Map<String, dynamic>>? history;
-  final bool expanded;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.locale;
-
-    // Ещё грузится — прозрачный отступ, кнопка не прыгает
-    if (history == null) return const SizedBox(height: 52);
-
-    // История пуста — резервируем то же место чтобы кнопка не прыгала
-    if (history!.isEmpty) return const SizedBox(height: 52);
-
-    // Есть записи — показываем заголовок и список
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onToggle,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.history_rounded, color: AppColors.primary, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l.testHistoryTitle(history!.length),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                AnimatedRotation(
-                  turns: expanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 250),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.textHint,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          child: expanded
-              ? Column(children: history!.map((e) => _HistoryItem(entry: e)).toList())
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-}
-
-class _HistoryItem extends StatelessWidget {
-  const _HistoryItem({required this.entry});
-  final Map<String, dynamic> entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final date = DateTime.parse(entry['date'] as String);
-    final riskLevel = entry['riskLevel'] as String;
-    final l = context.locale;
-
-    final label = switch (riskLevel) {
-      'high'     => l.testRiskHigh,
-      'moderate' => l.testRiskModerate,
-      _          => l.testRiskMinimal,
-    };
-    final color = switch (riskLevel) {
-      'high'     => Colors.red,
-      'moderate' => Colors.orange,
-      _          => Colors.green,
-    };
-    final icon = switch (riskLevel) {
-      'high'     => Icons.warning_rounded,
-      'moderate' => Icons.info_rounded,
-      _          => Icons.check_circle_rounded,
-    };
-
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 14),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -308,8 +236,13 @@ class _TestQuestionsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final question = state.currentQuestion;
-    final isLastAnswered = state.allAnswered;
+    final isLastAnswered =
+        state.answeredCount == state.totalQuestions && state.totalQuestions > 0;
+    final question = isLastAnswered
+        ? null
+        : (state.currentQuestionIndex < state.allQuestions.length
+            ? state.allQuestions[state.currentQuestionIndex]
+            : null);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -516,4 +449,3 @@ class _OptionTile extends StatelessWidget {
     );
   }
 }
-

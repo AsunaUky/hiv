@@ -6,10 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hiv/core/services/collection_names.dart';
 import 'package:hiv/core/utils/logger.dart';
 
-/// Репозиторий для управления профилем пользователя.
-///
-/// Фото хранится только в Firestore (поле `photoUrl` в UserModel),
-/// НЕ в Firebase Auth и НЕ в Firebase Storage.
+
 class UserRepository {
   UserRepository._();
   static final UserRepository instance = UserRepository._();

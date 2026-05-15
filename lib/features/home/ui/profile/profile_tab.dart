@@ -14,8 +14,21 @@ import 'package:hiv/features/app/bloc/app_bloc.dart';
 import 'package:hiv/features/home/ui/profile/guest_profile_screen.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
 
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
+
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  late final Stream<Map<String, dynamic>?> _profileStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileStream = UserRepository.instance.profileStream();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,21 +68,14 @@ class ProfileTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               const SizedBox(height: 32),
-
-              // fix: двойной StreamBuilder — Auth для имени/email,
-              // Firestore для фото (хранится как base64 в Firestore,
-              // не в Firebase Auth photoURL).
               StreamBuilder<UserModel>(
                 stream: AuthRepository.instance.userChanges,
                 initialData: AuthRepository.instance.currentUser,
                 builder: (context, authSnap) {
                   final user = authSnap.data ?? UserModel.empty;
                   return StreamBuilder<Map<String, dynamic>?>(
-                    stream: UserRepository.instance.profileStream(),
+                    stream: _profileStream,
                     builder: (context, fsSnap) {
-                      // Предпочитаем Firestore-фото (base64) — оно обновляется
-                      // через UserRepository.uploadPhoto. Firebase Auth photoURL
-                      // используем только как fallback (Google-аватар при входе).
                       final fsPhoto = fsSnap.data?['photoUrl'] as String?;
                       final effectivePhoto =
                           (fsPhoto != null && fsPhoto.isNotEmpty)
@@ -175,9 +181,6 @@ ImageProvider _resolveImage(String url) {
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user, required this.photoUrl});
   final UserModel user;
-
-  /// Эффективный URL фото — может быть base64 из Firestore
-  /// или photoURL из Firebase Auth (Google-аватар).
   final String photoUrl;
 
   @override
