@@ -547,6 +547,108 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Включите GPS на устройстве'**
   String get mapLocationGpsOff;
+
+  /// No description provided for @authErrorUserNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт с таким email не найден. Проверьте данные или зарегистрируйтесь.'**
+  String get authErrorUserNotFound;
+
+  /// No description provided for @authErrorWrongPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный пароль. Попробуйте ещё раз.'**
+  String get authErrorWrongPassword;
+
+  /// No description provided for @authErrorInvalidEmail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Некорректный формат email.'**
+  String get authErrorInvalidEmail;
+
+  /// No description provided for @authErrorUserDisabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот аккаунт заблокирован. Обратитесь в поддержку.'**
+  String get authErrorUserDisabled;
+
+  /// No description provided for @authErrorTooManyRequests.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток. Попробуйте позже.'**
+  String get authErrorTooManyRequests;
+
+  /// No description provided for @authErrorNetworkFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет подключения к интернету.'**
+  String get authErrorNetworkFailed;
+
+  /// No description provided for @authErrorEmailInUse.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт с таким email уже существует. Попробуйте войти.'**
+  String get authErrorEmailInUse;
+
+  /// No description provided for @authErrorWeakPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль слишком простой. Используйте не менее 6 символов.'**
+  String get authErrorWeakPassword;
+
+  /// No description provided for @authErrorDefault.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ошибка входа. Попробуйте ещё раз.'**
+  String get authErrorDefault;
+
+  /// No description provided for @authRegisterErrorDefault.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ошибка регистрации. Попробуйте ещё раз.'**
+  String get authRegisterErrorDefault;
+
+  /// No description provided for @authSessionExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.'**
+  String get authSessionExpired;
+
+  /// No description provided for @authGoogleCanceled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтверждение через Google отменено.'**
+  String get authGoogleCanceled;
+
+  /// No description provided for @authStatusLoggedOut.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пользователь вышел'**
+  String get authStatusLoggedOut;
+
+  /// No description provided for @authStatusAccountDeleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт удалён напрямую'**
+  String get authStatusAccountDeleted;
+
+  /// No description provided for @authStatusAccountDeletedGoogle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт удалён (через Google)'**
+  String get authStatusAccountDeletedGoogle;
+
+  /// No description provided for @authStatusError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ошибка'**
+  String get authStatusError;
+
+  /// No description provided for @authStatusWarningReauth.
+  ///
+  /// In ru, this message translates to:
+  /// **'Требуется повторная авторизация'**
+  String get authStatusWarningReauth;
 }
 
 class _AppLocalizationsDelegate

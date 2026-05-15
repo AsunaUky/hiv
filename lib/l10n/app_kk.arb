@@ -85,6 +85,25 @@
 "mapLegendAids": "ЖИТС орталығы",
 "close": "Жабу",
 "retry": "Қайталау",
-"mapLocationGpsOff": "Құрылғыда GPS-ті қосыңыз"
+"mapLocationGpsOff": "Құрылғыда GPS-ті қосыңыз",
+
+"authErrorUserNotFound": "Мұндай email-і бар аккаунт табылмады. Деректерді тексеріңіз немесе тіркеліңіз.",
+  "authErrorWrongPassword": "Құпия сөз қате. Қайтадан байқап көріңіз.",
+  "authErrorInvalidEmail": "Email форматы қате.",
+  "authErrorUserDisabled": "Бұл аккаунт бұғатталған. Қолдау көрсету қызметіне хабарласыңыз.",
+  "authErrorTooManyRequests": "Әрекет саны тым көп. Сәлден кейін қайта байқап көріңіз.",
+  "authErrorNetworkFailed": "Интернет байланысы жоқ.",
+  "authErrorEmailInUse": "Мұндай email-і бар аккаунт тіркелген. Жүйеге кіруге тырысыңыз.",
+  "authErrorWeakPassword": "Құпия сөз тым оңай. Кемінде 6 таңбадан тұратын құпия сөз қолданыңыз.",
+  "authErrorDefault": "Жүйеге кіру қатесі. Қайтадан байқап көріңіз.",
+  "authRegisterErrorDefault": "Тіркелу қатесі. Қайтадан байқап көріңіз.",
+  "authSessionExpired": "Сессия ескірді. Жүйеден шығып, қайта кіріңіз, содан кейін жоюды қайталаңыз.",
+  "authGoogleCanceled": "Google арқылы растау тоқтатылды.",
+
+  "authStatusLoggedOut": "Пайдаланушы жүйеден шықты",
+  "authStatusAccountDeleted": "Аккаунт тікелей жойылды",
+  "authStatusAccountDeletedGoogle": "Аккаунт жойылды (Google арқылы)",
+  "authStatusError": "Қате",
+  "authStatusWarningReauth": "Қайта авторизациядан өту қажет"
 
 }

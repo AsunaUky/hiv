@@ -239,4 +239,62 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mapLocationGpsOff => 'Включите GPS на устройстве';
+
+  @override
+  String get authErrorUserNotFound =>
+      'Аккаунт с таким email не найден. Проверьте данные или зарегистрируйтесь.';
+
+  @override
+  String get authErrorWrongPassword => 'Неверный пароль. Попробуйте ещё раз.';
+
+  @override
+  String get authErrorInvalidEmail => 'Некорректный формат email.';
+
+  @override
+  String get authErrorUserDisabled =>
+      'Этот аккаунт заблокирован. Обратитесь в поддержку.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Слишком много попыток. Попробуйте позже.';
+
+  @override
+  String get authErrorNetworkFailed => 'Нет подключения к интернету.';
+
+  @override
+  String get authErrorEmailInUse =>
+      'Аккаунт с таким email уже существует. Попробуйте войти.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Пароль слишком простой. Используйте не менее 6 символов.';
+
+  @override
+  String get authErrorDefault => 'Ошибка входа. Попробуйте ещё раз.';
+
+  @override
+  String get authRegisterErrorDefault =>
+      'Ошибка регистрации. Попробуйте ещё раз.';
+
+  @override
+  String get authSessionExpired =>
+      'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.';
+
+  @override
+  String get authGoogleCanceled => 'Подтверждение через Google отменено.';
+
+  @override
+  String get authStatusLoggedOut => 'Пользователь вышел';
+
+  @override
+  String get authStatusAccountDeleted => 'Аккаунт удалён напрямую';
+
+  @override
+  String get authStatusAccountDeletedGoogle => 'Аккаунт удалён (через Google)';
+
+  @override
+  String get authStatusError => 'Ошибка';
+
+  @override
+  String get authStatusWarningReauth => 'Требуется повторная авторизация';
 }

@@ -237,4 +237,64 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get mapLocationGpsOff => 'Құрылғыда GPS-ті қосыңыз';
+
+  @override
+  String get authErrorUserNotFound =>
+      'Мұндай email-і бар аккаунт табылмады. Деректерді тексеріңіз немесе тіркеліңіз.';
+
+  @override
+  String get authErrorWrongPassword =>
+      'Құпия сөз қате. Қайтадан байқап көріңіз.';
+
+  @override
+  String get authErrorInvalidEmail => 'Email форматы қате.';
+
+  @override
+  String get authErrorUserDisabled =>
+      'Бұл аккаунт бұғатталған. Қолдау көрсету қызметіне хабарласыңыз.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Әрекет саны тым көп. Сәлден кейін қайта байқап көріңіз.';
+
+  @override
+  String get authErrorNetworkFailed => 'Интернет байланысы жоқ.';
+
+  @override
+  String get authErrorEmailInUse =>
+      'Мұндай email-і бар аккаунт тіркелген. Жүйеге кіруге тырысыңыз.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Құпия сөз тым оңай. Кемінде 6 таңбадан тұратын құпия сөз қолданыңыз.';
+
+  @override
+  String get authErrorDefault => 'Жүйеге кіру қатесі. Қайтадан байқап көріңіз.';
+
+  @override
+  String get authRegisterErrorDefault =>
+      'Тіркелу қатесі. Қайтадан байқап көріңіз.';
+
+  @override
+  String get authSessionExpired =>
+      'Сессия ескірді. Жүйеден шығып, қайта кіріңіз, содан кейін жоюды қайталаңыз.';
+
+  @override
+  String get authGoogleCanceled => 'Google арқылы растау тоқтатылды.';
+
+  @override
+  String get authStatusLoggedOut => 'Пайдаланушы жүйеден шықты';
+
+  @override
+  String get authStatusAccountDeleted => 'Аккаунт тікелей жойылды';
+
+  @override
+  String get authStatusAccountDeletedGoogle =>
+      'Аккаунт жойылды (Google арқылы)';
+
+  @override
+  String get authStatusError => 'Қате';
+
+  @override
+  String get authStatusWarningReauth => 'Қайта авторизациядан өту қажет';
 }
