@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hiv/core/locale/locale_cubit.dart';
+import 'package:hiv/core/locale/locale_ext.dart';
 import 'package:hiv/core/router/route_names.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/data/models/user_model.dart';
@@ -48,14 +49,14 @@ class _ProfileTabState extends State<ProfileTab> {
         }
         if (state is AuthDeleteFailure) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(state.message),
+            content: Text(AppLocalizations.of(context).authErrorFromCode(state.message)),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ));
         }
         if (state is AuthFailure) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(state.message),
+            content: Text(AppLocalizations.of(context).authErrorFromCode(state.message)),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ));

@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hiv/core/services/permission_service.dart';
 import 'package:hiv/domain/repositories/user_repository.dart';
 import 'package:hiv/core/theme/app_colors.dart';
 import 'package:hiv/core/utils/validator.dart';
 import 'package:hiv/l10n/generated/app_localizations.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 extension _ContextL10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
@@ -72,6 +74,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_picking) return;
     _picking = true;
     try {
+      // На Android 13+ Permission.photos → READ_MEDIA_IMAGES (системный пикер).
+      // На Android ≤12 и iOS — стандартный запрос разрешения.
+      PermissionStatus status = await PermissionService.galleryStatus();
+
+      if (!status.isGranted && !status.isLimited) {
+        status = await PermissionService.requestGalleryPermission();
+        if (!mounted) return;
+        // isPermanentlyDenied — пользователь запретил навсегда
+        if (status.isPermanentlyDenied) {
+          _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
+          await PermissionService.openSettings();
+          return;
+        }
+        // isDenied — просто отказал, не открываем галерею
+        if (!status.isGranted && !status.isLimited) {
+          _showSnackBar(context.l10n.editNoGalleryAccess, isError: true);
+          return;
+        }
+      }
+
       final picked = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         maxWidth: 512,

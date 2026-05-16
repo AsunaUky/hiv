@@ -24,8 +24,6 @@ class TestCubit extends Cubit<TestState> {
     }
   }
 
-  // fix P2-02: removed `if (current is TestCompleted)` guard — restart() must
-  // also work from TestInProgress (called from Q1 back button).
   void restart() {
     if (_cachedReady != null) {
       emit(_cachedReady!);

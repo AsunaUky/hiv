@@ -37,23 +37,7 @@ class FirebaseAuthService {
   }
 
   static String _mapSignInError(String code) {
-    switch (code) {
-      case 'user-not-found':
-      case 'invalid-credential':
-        return 'Аккаунт с таким email не найден. Проверьте данные или зарегистрируйтесь.';
-      case 'wrong-password':
-        return 'Неверный пароль. Попробуйте ещё раз.';
-      case 'invalid-email':
-        return 'Некорректный формат email.';
-      case 'user-disabled':
-        return 'Этот аккаунт заблокирован. Обратитесь в поддержку.';
-      case 'too-many-requests':
-        return 'Слишком много попыток. Попробуйте позже.';
-      case 'network-request-failed':
-        return 'Нет подключения к интернету.';
-      default:
-        return 'Ошибка входа. Попробуйте ещё раз.';
-    }
+    return code; // Firebase code проходит напрямую
   }
 
   Future<UserCredential> createUserWithEmailAndPassword(
@@ -74,18 +58,7 @@ class FirebaseAuthService {
   }
 
   static String _mapRegisterError(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'Аккаунт с таким email уже существует. Попробуйте войти.';
-      case 'invalid-email':
-        return 'Некорректный формат email.';
-      case 'weak-password':
-        return 'Пароль слишком простой. Используйте не менее 6 символов.';
-      case 'network-request-failed':
-        return 'Нет подключения к интернету.';
-      default:
-        return 'Ошибка регистрации. Попробуйте ещё раз.';
-    }
+    return code;
   }
 
   Future<void> initialize({required String serverClientId}) async {
@@ -189,7 +162,7 @@ class FirebaseAuthService {
 
     if (!isGoogleUser) {
       throw AuthException(
-        'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.',
+        'auth-session-expired', 
       );
     }
 
@@ -219,7 +192,7 @@ class FirebaseAuthService {
           case GoogleSignInAuthenticationEventSignOut():
             if (!completer.isCompleted) {
               completer.completeError(
-                AuthException('Подтверждение через Google отменено.'),
+                AuthException('google-sign-in-cancelled'),
               );
             }
             await subscription.cancel();

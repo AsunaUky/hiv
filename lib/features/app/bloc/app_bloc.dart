@@ -34,9 +34,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       );
       emit(const AuthSuccess());
     } on FirebaseAuthException catch (e) {
-      emit(AuthFailure(_mapError(e.code)));
+      emit(AuthFailure(e.code));
     } catch (_) {
-      emit(const AuthFailure('Ошибка входа. Проверьте подключение и попробуйте снова.'));
+      emit(const AuthFailure('network-request-failed'));
     }
   }
 
@@ -53,9 +53,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       await cred.user?.updateDisplayName(event.name.trim());
       emit(const AuthSuccess());
     } on FirebaseAuthException catch (e) {
-      emit(AuthFailure(_mapError(e.code)));
+      emit(AuthFailure(e.code));
     } catch (_) {
-      emit(const AuthFailure('Ошибка регистрации. Проверьте подключение и попробуйте снова.'));
+      emit(const AuthFailure('network-request-failed'));
     }
   }
 
@@ -68,9 +68,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       await _auth.signInAnonymously();
       emit(const AuthSuccess());
     } on FirebaseAuthException catch (e) {
-      emit(AuthFailure(_mapError(e.code)));
+      emit(AuthFailure(e.code));
     } catch (_) {
-      emit(const AuthFailure('Ошибка входа как гость. Попробуйте снова.'));
+      emit(const AuthFailure('network-request-failed'));
     }
   }
 
@@ -87,9 +87,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         emit(const AuthSuccess());
       }
     } on FirebaseAuthException catch (e) {
-      emit(AuthFailure(_mapError(e.code)));
+      emit(AuthFailure(e.code));
     } catch (_) {
-      emit(const AuthFailure('Ошибка входа через Google. Попробуйте снова.'));
+      emit(const AuthFailure('network-request-failed'));
     }
   }
 
@@ -115,27 +115,12 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       emit(AuthFailure(e.message));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        emit(const AuthDeleteFailure(
-          'Сессия устарела. Выйдите и войдите снова, затем повторите удаление.',
-        ));
+        emit(const AuthDeleteFailure('auth-session-expired'));
       } else {
-        emit(AuthFailure(_mapError(e.code)));
+        emit(AuthFailure(e.code));
       }
     } catch (_) {
-      emit(const AuthFailure('Не удалось удалить аккаунт. Попробуйте снова.'));
+      emit(const AuthFailure('network-request-failed'));
     }
   }
-
-  String _mapError(String code) => switch (code) {
-        'user-not-found'         => 'Пользователь не найден',
-        'wrong-password'         => 'Неверный пароль',
-        'invalid-credential'     => 'Неверный email или пароль',
-        'email-already-in-use'   => 'Email уже используется',
-        'invalid-email'          => 'Некорректный email',
-        'weak-password'          => 'Слишком простой пароль',
-        'network-request-failed' => 'Нет подключения к сети',
-        'too-many-requests'      => 'Слишком много попыток. Попробуйте позже',
-        'operation-not-allowed'  => 'Этот способ входа не включён',
-        _                        => 'Ошибка: $code',
-      };
 }

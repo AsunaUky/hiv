@@ -53,8 +53,6 @@ class GuestProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // FIX: context.push сохраняет стек → кнопка «назад» работает.
-            // context.go очищал стек → кнопки назад не было.
             ElevatedButton(
               onPressed: () => context.push(RouteNames.login),
               style: ElevatedButton.styleFrom(
