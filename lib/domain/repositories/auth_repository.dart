@@ -71,11 +71,14 @@ class AuthRepository {
     }
   }
 
-  /// Удаление аккаунта — удаляем из Firebase Auth (и Google сессию).
-  /// Бросает [FirebaseAuthException] с кодом requires-recent-login
-  /// если нужна повторная аутентификация.
+  /// Удаление аккаунта — сначала удаляем данные из Firestore,
+  /// затем удаляем аккаунт из Firebase Auth.
   Future<void> deleteAccount() async {
     try {
+      final uid = _authService.currentUser?.uid;
+      if (uid != null) {
+        await _firestoreService.deleteUser(uid);
+      }
       await _authService.deleteAccount();
       AppLogger.info('AuthRepository: аккаунт удалён');
     } catch (error, stackTrace) {

@@ -113,9 +113,12 @@ class FirebaseAuthService {
           switch (event) {
             case GoogleSignInAuthenticationEventSignIn():
               final idToken = event.user.authentication.idToken;
-              final credential = GoogleAuthProvider.credential(idToken: idToken);
-              final userCredential =
-                  await _auth.signInWithCredential(credential);
+              final credential = GoogleAuthProvider.credential(
+                idToken: idToken,
+              );
+              final userCredential = await _auth.signInWithCredential(
+                credential,
+              );
               AppLogger.info('Google Sign-In: ${userCredential.user?.email}');
               if (!completer.isCompleted) completer.complete(userCredential);
 
@@ -123,7 +126,11 @@ class FirebaseAuthService {
               if (!completer.isCompleted) completer.complete(null);
           }
         } catch (error, stackTrace) {
-          AppLogger.error('Google Sign-In: ошибка', error: error, stackTrace: stackTrace);
+          AppLogger.error(
+            'Google Sign-In: ошибка',
+            error: error,
+            stackTrace: stackTrace,
+          );
           if (!completer.isCompleted) completer.completeError(error);
         } finally {
           await subscription.cancel();
@@ -171,7 +178,9 @@ class FirebaseAuthService {
         AppLogger.error('Delete Account: ошибка', error: e);
         rethrow;
       }
-      AppLogger.warning('Delete Account: requires-recent-login, запускаем re-auth');
+      AppLogger.warning(
+        'Delete Account: requires-recent-login, запускаем re-auth',
+      );
     }
 
     final isGoogleUser = user.providerData.any(
@@ -184,46 +193,36 @@ class FirebaseAuthService {
       );
     }
 
-    final serverClientId = dotenv.env['SERVER_CLIENT_ID'];
-    if (serverClientId == null) throw Exception('Server client is empty!');
-
-    await initialize(serverClientId: serverClientId);
-    try {
-      await _googleSignIn.disconnect();
-    } catch (_) {}
-
+     final reAuthClientId = dotenv.env['SERVER_CLIENT_ID'];
+    if (reAuthClientId == null) throw Exception('Server client is empty!');
+    await initialize(serverClientId: reAuthClientId);
     final completer = Completer<void>();
     late StreamSubscription<GoogleSignInAuthenticationEvent> subscription;
-
-    bool signInStarted = false;
 
     subscription = _googleSignIn.authenticationEvents.listen(
       (event) async {
         switch (event) {
           case GoogleSignInAuthenticationEventSignIn():
-            signInStarted = true;
             try {
               final idToken = event.user.authentication.idToken;
               final credential = GoogleAuthProvider.credential(idToken: idToken);
               await user.reauthenticateWithCredential(credential);
-              await _googleSignIn.signOut().catchError((_) {});
               await user.delete();
-              AppLogger.info('Delete Account: аккаунт удалён (Google re-auth)');
+              AppLogger.info('Delete Account: аккаунт удалён (re-auth)');
               if (!completer.isCompleted) completer.complete();
             } catch (e) {
               if (!completer.isCompleted) completer.completeError(e);
             } finally {
-              subscription.cancel();
+              await subscription.cancel();
             }
 
           case GoogleSignInAuthenticationEventSignOut():
-            if (!signInStarted) return;
             if (!completer.isCompleted) {
               completer.completeError(
                 AuthException('Подтверждение через Google отменено.'),
               );
-              subscription.cancel();
             }
+            await subscription.cancel();
         }
       },
       onError: (Object error) {

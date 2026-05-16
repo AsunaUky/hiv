@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/trust_points_entity.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+
 extension _ContextL10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
 }
@@ -39,145 +40,165 @@ class TrustPointCard extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: const [
           BoxShadow(
-              color: Colors.black26, blurRadius: 16, offset: Offset(0, -2)),
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, -2),
+          ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // «Ручка» bottom sheet.
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
+        child: GestureDetector(
+          onVerticalDragEnd: (details) {
+            // Смахиваем вниз если скорость > 300 пикс/сек вниз
+            if (details.primaryVelocity != null &&
+                details.primaryVelocity! > 300) {
+              onClose();
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // «Ручка» bottom sheet.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragEnd: (details) {
+                  if ((details.primaryVelocity ?? 0) > 200) onClose();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 10, 0, 8),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
 
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Заголовок ───────────────────────────────────────────
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor:
-                              accentColor.withValues(alpha: 0.12),
-                          foregroundColor: accentColor,
-                          child:
-                              Icon(_icon(point.category), size: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                point.title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 3),
-                              _IconText(
-                                icon: Icons.place_outlined,
-                                text: point.address,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ],
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Заголовок ───────────────────────────────────────────
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: accentColor.withValues(
+                              alpha: 0.12,
+                            ),
+                            foregroundColor: accentColor,
+                            child: Icon(_icon(point.category), size: 22),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          tooltip: l10n.close,
-                          onPressed: onClose,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                              minWidth: 36, minHeight: 36),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // ── Режим работы ────────────────────────────────────────
-                    _IconText(
-                      icon: Icons.access_time_outlined,
-                      text: '${l10n.mapHoursLabel}: ${point.hours}',
-                      color: colorScheme.onSurface,
-                      bold: true,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // ── Услуги ──────────────────────────────────────────────
-                    Text(
-                      l10n.mapServicesLabel,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  point.title,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 3),
+                                _IconText(
+                                  icon: Icons.place_outlined,
+                                  text: point.address,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: l10n.close,
+                            onPressed: onClose,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        for (final s in point.services)
-                          _ServiceChip(label: s, color: accentColor),
-                      ],
-                    ),
 
-                    const SizedBox(height: 18),
+                      const SizedBox(height: 12),
 
-                    // ── Кнопка маршрута ─────────────────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: accentColor,
-                          foregroundColor: Colors.white,
-                        ),
-                        icon: const Icon(Icons.directions_outlined),
-                        label: Text(l10n.mapRouteButton),
-                        onPressed: onOpenRoute,
+                      // ── Режим работы ────────────────────────────────────────
+                      _IconText(
+                        icon: Icons.access_time_outlined,
+                        text: '${l10n.mapHoursLabel}: ${point.hours}',
+                        color: colorScheme.onSurface,
+                        bold: true,
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 12),
+
+                      // ── Услуги ──────────────────────────────────────────────
+                      Text(
+                        l10n.mapServicesLabel,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final s in point.services)
+                            _ServiceChip(label: s, color: accentColor),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // ── Кнопка маршрута ─────────────────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.directions_outlined),
+                          label: Text(l10n.mapRouteButton),
+                          onPressed: onOpenRoute,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   static Color _color(TrustPointCategory c) => switch (c) {
-        TrustPointCategory.polyclinic => AppColors.trustPolyclinic,
-        TrustPointCategory.dermatoVenerologic =>
-          AppColors.trustDermatoVenerologic,
-        TrustPointCategory.aidsCenter => AppColors.trustAidsCenter,
-      };
+    TrustPointCategory.polyclinic => AppColors.trustPolyclinic,
+    TrustPointCategory.dermatoVenerologic => AppColors.trustDermatoVenerologic,
+    TrustPointCategory.aidsCenter => AppColors.trustAidsCenter,
+  };
 
   static IconData _icon(TrustPointCategory c) => switch (c) {
-        TrustPointCategory.polyclinic => Icons.local_hospital_outlined,
-        TrustPointCategory.dermatoVenerologic =>
-          Icons.medical_services_outlined,
-        TrustPointCategory.aidsCenter => Icons.health_and_safety_outlined,
-      };
+    TrustPointCategory.polyclinic => Icons.local_hospital_outlined,
+    TrustPointCategory.dermatoVenerologic => Icons.medical_services_outlined,
+    TrustPointCategory.aidsCenter => Icons.health_and_safety_outlined,
+  };
 }
 
 // ── Вспомогательные виджеты ───────────────────────────────────────────────────
@@ -205,9 +226,9 @@ class _IconText extends StatelessWidget {
           child: Text(
             text,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: bold ? FontWeight.w600 : null,
-                ),
+              color: color,
+              fontWeight: bold ? FontWeight.w600 : null,
+            ),
           ),
         ),
       ],
@@ -231,10 +252,7 @@ class _ServiceChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: color),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
       ),
     );
   }

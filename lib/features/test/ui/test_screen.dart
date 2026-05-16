@@ -145,8 +145,8 @@ class _TestIntroPageState extends State<_TestIntroPage> {
                 ),
               ),
               const SizedBox(height: 32),
-              if (_history == null)
-                const Center(child: CircularProgressIndicator())
+              if (_history == null || _history!.isEmpty)
+                const SizedBox(height: 48)
               else if (_history!.isNotEmpty) ...[
                 GestureDetector(
                   onTap: () =>
@@ -237,7 +237,8 @@ class _TestQuestionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLastAnswered =
-        state.answeredCount == state.totalQuestions && state.totalQuestions > 0;
+        state.totalQuestions > 0 &&
+        state.currentQuestionIndex >= state.totalQuestions;
     final question = isLastAnswered
         ? null
         : (state.currentQuestionIndex < state.allQuestions.length
